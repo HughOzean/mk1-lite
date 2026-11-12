@@ -1,19 +1,19 @@
 {
-  "version": "0.2.5",
+  "version": "0.2.6",
   "repository": "https://github.com/HughOzean/mk1-lite",
-  "tag": "v0.2.5",
+  "tag": "v0.2.6",
   "platforms": {
     "macos": {
       "available": true,
-      "asset": "Mk.1-Lite_0.2.5_macos-arm64.dmg",
-      "bytes": 3770478,
-      "sha256": "05d00a6a7c8922c3f0bbfc18fb8154780c12cf115c95aefc227957925a8f70e7"
+      "asset": "Mk.1-Lite_0.2.6_macos-arm64.dmg",
+      "bytes": 3770219,
+      "sha256": "05f45949791690027bd2fff7b310d251c45e9a851c2236cf32be5da68deb7341"
     },
     "windows": {
       "available": true,
-      "asset": "Mk.1-Lite_0.2.5_windows-x64-setup.exe",
-      "bytes": 2676481,
-      "sha256": "52097b8f1016a1a75109f9bb8c72aaa3367fc19df14ebb5c4386df0f8d1f1528"
+      "asset": "Mk.1-Lite_0.2.6_windows-x64-setup.exe",
+      "bytes": 2672623,
+      "sha256": "e0ac5b6f402f5cb9783ba75647e97a4a708ba50eb96fdf2810ce27d8db9e3cdb"
     }
   }
 }
