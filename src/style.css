@@ -1575,7 +1575,7 @@ body {
 .mode-toggle button {
   min-width: 72px;
   height: 30px;
-  padding: 0 14px;
+  padding: 0 10px;
   border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
