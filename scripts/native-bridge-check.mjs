@@ -104,7 +104,7 @@ try {
   await expect(page.locator(".document-tab")).toHaveCount(2);
   await expect(page).toHaveTitle("Beta.md");
   await page.evaluate(() => window.testMenu("toggle-mode"));
-  await expect(page.locator('[data-action="toggle-mode"]')).toHaveAttribute(
+  await expect(page.locator(".mode-toggle")).toHaveAttribute(
     "data-state",
     "preview",
   );

@@ -76,7 +76,7 @@ try {
       .count(),
     0,
   );
-  await expect(page.locator(".component-bar button")).toHaveCount(3);
+  await expect(page.locator(".component-bar button")).toHaveCount(4);
   await page.locator('[data-action="cheatsheet"]').click();
   await expect(page.locator("#markdown-cheatsheet")).toBeVisible();
   await expect(page.locator("#cheatsheet-title")).toHaveText("Markdown语法表");
@@ -93,24 +93,32 @@ try {
   ]);
   await expect(page.locator(".document-tab")).toHaveCount(2);
   await expect(page).toHaveTitle("Beta.md");
-  const toggle = page.locator('[data-action="toggle-mode"]');
+  const toggle = page.locator(".mode-toggle");
   assert.deepEqual(
     await page
       .locator(".component-bar button")
-      .evaluateAll((elements) => elements.map((el) => el.dataset.action)),
-    ["cheatsheet", "settings", "toggle-mode"],
+      .evaluateAll((elements) =>
+        elements.map((el) => el.dataset.action || el.dataset.mode),
+      ),
+    ["cheatsheet", "settings", "editor", "preview"],
   );
-  await toggle.click();
+  await toggle.locator('[data-mode="preview"]').click();
   await expect(toggle).toHaveAttribute("data-state", "preview");
-  await expect(toggle).toHaveCSS("background-color", "rgb(51, 255, 102)");
+  await expect(toggle.locator('[aria-pressed="true"]')).toHaveCSS(
+    "background-color",
+    "rgb(51, 255, 102)",
+  );
   await expect(page.locator(".preview-pane")).toBeVisible();
   await expect(page.locator(".editor-pane")).toBeHidden();
-  await toggle.click();
+  await toggle.locator('[data-mode="editor"]').click();
   await expect(toggle).toHaveAttribute("data-state", "editor");
-  await expect(toggle).toHaveCSS("background-color", "rgb(102, 204, 102)");
+  await expect(toggle.locator('[aria-pressed="true"]')).toHaveCSS(
+    "background-color",
+    "rgb(102, 204, 102)",
+  );
   await page.keyboard.press("Meta+Shift+p");
   await expect(toggle).toHaveAttribute("data-state", "preview");
-  await toggle.click();
+  await toggle.locator('[data-mode="editor"]').click();
 
   await expect(page.locator("#file-tree")).toBeVisible();
   await expect(page.locator("#outline-panel")).toBeHidden();
@@ -181,7 +189,7 @@ try {
   await page.locator(".cm-content").click();
   await page.keyboard.press("Meta+Alt+p");
   await expect(toggle).toHaveAttribute("data-state", "preview");
-  await toggle.click();
+  await toggle.locator('[data-mode="editor"]').click();
 
   await page.locator("[data-tab]").filter({ hasText: "Beta.md" }).click();
   await expect(page.locator(".cm-lineNumbers")).toHaveCount(0);

@@ -1566,40 +1566,50 @@ body {
 }
 .mode-toggle {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 88px;
-  height: 32px;
-  padding: 0 17px;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #66cc6655;
+  border-radius: 6px;
+  background: #66cc661a;
+}
+.mode-toggle button {
+  min-width: 72px;
+  height: 30px;
+  padding: 0 14px;
   border: 1px solid transparent;
   border-radius: 4px;
+  background: transparent;
+  color: var(--subtle);
   font-size: 12px;
-  font-weight: 550;
-  color: #152315;
+  font-weight: 600;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+.mode-toggle button[aria-pressed="false"]:hover:not(:disabled) {
+  color: var(--text);
+  background: #66cc6626;
+}
+.mode-toggle button[aria-pressed="true"] {
+  color: #102415;
   background: #66cc66;
+  border-color: #b5e6b5;
+  box-shadow:
+    0 1px 4px #0005,
+    inset 0 1px #ffffff55;
 }
-.mode-toggle[data-state="preview"] {
+.mode-toggle button[data-mode="preview"][aria-pressed="true"] {
   background: #33ff66;
+  border-color: #a0ffb8;
 }
-.mode-toggle:hover {
-  color: #152315;
-  filter: none;
-}
-.mode-toggle:disabled {
+.mode-toggle button:disabled {
   opacity: 0.45;
   cursor: default;
 }
-.mode-toggle[data-state="editor"]:hover {
-  background: #66cc66;
-}
-.mode-toggle[data-state="preview"]:hover {
-  background: #33ff66;
-}
-
-.mode-toggle {
-  transition:
-    box-shadow 0.15s,
-    border-color 0.15s;
+.mode-toggle button:focus-visible {
+  outline: 2px solid #33ff66;
+  outline-offset: 2px;
 }
 .brand-icon {
   width: 36px;
