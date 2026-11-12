@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="100 100 824 824" role="img" aria-labelledby="title">
+  <title id="title">Mk.1</title>
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#484a4c"/>
+      <stop offset="1" stop-color="#343638"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".02"/>
+    </linearGradient>
+    <filter id="shadow" x="-.2" y="-.2" width="1.4" height="1.4" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000000" flood-opacity=".24"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#surface)"/>
+  <rect x="101" y="101" width="822" height="822" rx="183" fill="none" stroke="url(#edge)" stroke-width="2"/>
+  <path fill="#33ff66" d="M217.946 407.042L217.946 616.958L261.164 616.958L261.164 469.664L261.752 469.664L313.202 616.958L348.776 616.958L400.226 468.194L400.814 468.194L400.814 616.958L444.032 616.958L444.032 407.042L379.058 407.042L332.606 551.396L332.018 551.396L282.920 407.042ZM476.016 407.042L476.016 616.958L517.764 616.958L517.764 564.626L533.934 549.044L575.682 616.958L626.250 616.958L562.452 520.820L619.782 464.960L570.390 464.960L517.764 519.644L517.764 407.042ZM806.054 616.958L806.054 411.158L772.832 411.158Q771.068 422.918 765.482 430.856Q759.896 438.794 751.811 443.645Q743.726 448.496 733.583 450.407Q723.440 452.318 712.562 452.024L712.562 483.482L764.306 483.482L764.306 616.958Z"/>
+  <path fill="#ffffff" d="M634.714 571.682L634.714 616.958L680.872 616.958L680.872 571.682Z"/>
+</svg>

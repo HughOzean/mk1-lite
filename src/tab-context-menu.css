@@ -1,0 +1,42 @@
+.tab-context-menu {
+  position: fixed;
+  z-index: 160;
+  min-width: 175px;
+  max-width: calc(100vw - 12px);
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 35px #0006;
+  border-radius: 6px;
+  padding: 5px;
+  color: var(--text);
+}
+.tab-context-menu[hidden] {
+  display: none !important;
+}
+.tab-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: inherit;
+  border-radius: 3px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tab-context-menu button:hover:not(:disabled),
+.tab-context-menu button:focus-visible {
+  background: #66cc661c;
+  color: var(--accent);
+  outline: none;
+}
+.tab-context-menu button:disabled {
+  color: var(--muted);
+  opacity: 0.45;
+  cursor: default;
+}

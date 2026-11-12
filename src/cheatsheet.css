@@ -1,0 +1,240 @@
+.markdown-cheatsheet {
+  width: 760px;
+  max-width: calc(100vw - 28px);
+  max-height: 88dvh;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 22px 90px #0008;
+  font-family: inherit;
+  font-size: 12px;
+  overflow: hidden;
+}
+.markdown-cheatsheet::backdrop {
+  background: #0008;
+}
+.markdown-cheatsheet:not([open]) {
+  display: none;
+}
+.cheatsheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 17px 22px;
+  border-bottom: 1px solid var(--border);
+  gap: 15px;
+}
+.cheatsheet-header h2 {
+  font: 500 16px/1.4 var(--font-mono);
+  margin: 0;
+}
+.cheatsheet-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 25px;
+  font-weight: 300;
+  flex-shrink: 0;
+}
+.cheatsheet-content {
+  padding: 0 22px 20px;
+  max-height: calc(88dvh - 66px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.cheatsheet-note,
+.cheatsheet-break-note {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+  margin: 16px 0;
+}
+.cheatsheet-reference {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  font-size: 12px;
+}
+.cheatsheet-reference th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg);
+  color: var(--subtle);
+  font-weight: 500;
+  border: 1px solid var(--border);
+}
+.cheatsheet-reference td {
+  border: 1px solid var(--border);
+  padding: 13px 12px;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+.cheatsheet-label {
+  display: block;
+  font-size: 10px;
+  color: var(--accent);
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.cheatsheet-source {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 11px/1.8 var(--font-mono);
+  color: var(--subtle);
+}
+.cheatsheet-source code {
+  font: inherit;
+}
+.cheatsheet-result {
+  line-height: 1.8;
+  color: var(--text);
+}
+.cheatsheet-result > :first-child {
+  margin-top: 0;
+}
+.cheatsheet-result > :last-child {
+  margin-bottom: 0;
+}
+.cheatsheet-result h1,
+.cheatsheet-result h2,
+.cheatsheet-result h3,
+.cheatsheet-result h4,
+.cheatsheet-result h5 {
+  line-height: 1.4;
+  font-weight: 600;
+  margin: 0;
+}
+.cheatsheet-result h1 {
+  font-size: 25px;
+}
+.cheatsheet-result h2 {
+  font-size: 21px;
+}
+.cheatsheet-result h3 {
+  font-size: 18px;
+}
+.cheatsheet-result h4 {
+  font-size: 15px;
+}
+.cheatsheet-result h5 {
+  font-size: 13px;
+}
+.cheatsheet-result p {
+  margin: 5px 0;
+}
+.cheatsheet-result a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+.cheatsheet-result ul,
+.cheatsheet-result ol {
+  padding-left: 20px;
+  margin: 5px 0;
+}
+.cheatsheet-result li::marker {
+  color: var(--accent);
+}
+.cheatsheet-result blockquote {
+  margin: 0;
+  padding: 2px 12px;
+  background: #66cc6609;
+  border-left: 2px solid var(--accent);
+}
+.cheatsheet-result code {
+  font: 11px var(--font-mono);
+  color: var(--accent);
+  background: #66cc660d;
+  padding: 3px 5px;
+  border-radius: 3px;
+}
+.cheatsheet-result pre {
+  font: 11px/1.8 var(--font-mono);
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: auto;
+  max-width: 100%;
+  margin: 0;
+}
+.cheatsheet-result pre code {
+  background: none;
+  padding: 0;
+  color: var(--text);
+}
+.cheatsheet-result table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 10px;
+}
+.cheatsheet-result th,
+.cheatsheet-result td {
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+}
+.cheatsheet-result hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+.cheatsheet-image {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.cheatsheet-image svg {
+  width: 64px;
+  height: 38px;
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .markdown-cheatsheet {
+    max-width: calc(100vw - 16px);
+    max-height: 92dvh;
+  }
+  .cheatsheet-header {
+    padding: 12px 14px;
+  }
+  .cheatsheet-header h2 {
+    font-size: 14px;
+  }
+  .cheatsheet-content {
+    padding: 0 12px 12px;
+    max-height: calc(92dvh - 58px);
+  }
+  .cheatsheet-reference th,
+  .cheatsheet-reference td {
+    padding: 9px 7px;
+  }
+  .cheatsheet-source {
+    font-size: 10px;
+  }
+  .cheatsheet-reference th {
+    font-size: 11px;
+  }
+  .cheatsheet-image {
+    display: block;
+  }
+  .cheatsheet-image span {
+    display: block;
+    margin-top: 4px;
+  }
+  .cheatsheet-result h1 {
+    font-size: 22px;
+  }
+  .cheatsheet-result h2 {
+    font-size: 19px;
+  }
+  .cheatsheet-result h3 {
+    font-size: 16px;
+  }
+}

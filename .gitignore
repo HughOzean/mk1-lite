@@ -1,0 +1,19 @@
+node_modules/
+dist/
+src-tauri/target/
+.DS_Store
+*.local
+
+.build-tools/
+release/
+
+# Local QA, generated schemas and credentials
+artifacts/
+src-tauri/gen/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx

@@ -1,0 +1,19 @@
+{
+  "version": "0.2.4",
+  "repository": "https://github.com/HughOzean/mk1-lite",
+  "tag": "v0.2.4",
+  "platforms": {
+    "macos": {
+      "available": false,
+      "asset": "Mk.1-Lite_0.2.4_macos-arm64.dmg",
+      "bytes": 3770552,
+      "sha256": null
+    },
+    "windows": {
+      "available": false,
+      "asset": "Mk.1-Lite_0.2.4_windows-x64-setup.exe",
+      "bytes": null,
+      "sha256": null
+    }
+  }
+}

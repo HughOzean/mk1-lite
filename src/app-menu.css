@@ -1,0 +1,91 @@
+.app-menu-bar {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  min-height: 33px;
+  padding: 3px 9px;
+  border-bottom: 1px solid var(--border);
+  background: var(--sidebar);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  position: relative;
+  z-index: 45;
+}
+.app-menu-group {
+  flex-shrink: 0;
+}
+.app-menu-trigger {
+  height: 27px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.app-menu-trigger[aria-expanded="true"] {
+  background: #66cc661c;
+  color: var(--accent);
+}
+.app-menu-dropdown {
+  position: fixed;
+  z-index: 46;
+  min-width: 205px;
+  max-width: calc(100vw - 12px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px;
+  background: var(--panel);
+  box-shadow: 0 10px 35px #0005;
+  color: var(--text);
+}
+.app-menu-dropdown[hidden] {
+  display: none;
+}
+.app-menu-dropdown > button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  min-height: 31px;
+  padding: 7px 10px;
+  font-size: 11px;
+  text-align: left;
+  border-radius: 3px;
+}
+.app-menu-dropdown > button:not(:disabled):hover,
+.app-menu-dropdown > button:not(:disabled):focus-visible {
+  background: #66cc661b;
+  color: var(--accent);
+}
+.app-menu-dropdown > button:disabled {
+  opacity: 0.36;
+  cursor: default;
+}
+.app-menu-dropdown kbd {
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.app-menu-separator {
+  height: 1px;
+  background: var(--border);
+  margin: 5px 5px;
+}
+@media (max-width: 600px) {
+  .app-menu-bar {
+    gap: 0;
+    padding: 4px;
+    flex-wrap: wrap;
+  }
+  .app-menu-trigger {
+    padding: 5px 7px;
+    height: 32px;
+    font-size: 11px;
+  }
+  .app-menu-dropdown > button {
+    min-height: 38px;
+  }
+}
