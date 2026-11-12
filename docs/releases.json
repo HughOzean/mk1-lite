@@ -4,16 +4,16 @@
   "tag": "v0.2.4",
   "platforms": {
     "macos": {
-      "available": false,
+      "available": true,
       "asset": "Mk.1-Lite_0.2.4_macos-arm64.dmg",
       "bytes": 3770552,
-      "sha256": null
+      "sha256": "5c86e2a2b228b4adcbe13aba439af88f7cecf4cefcb2955cddafd7ea1bcda2c9"
     },
     "windows": {
-      "available": false,
+      "available": true,
       "asset": "Mk.1-Lite_0.2.4_windows-x64-setup.exe",
-      "bytes": null,
-      "sha256": null
+      "bytes": 2675037,
+      "sha256": "f0a07ec3461ae717aa0d2b074e56a2cb0c85f82240eff11e0706689b6d842f5b"
     }
   }
 }

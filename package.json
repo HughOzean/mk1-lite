@@ -20,7 +20,9 @@
     "test:shortcuts": "node scripts/shortcuts-check.mjs",
     "test:tabs": "node scripts/tab-context-check.mjs",
     "icons": "node scripts/generate-icons.mjs",
-    "package:mac:arm": "node scripts/package-macos-dmg.mjs"
+    "package:mac:arm": "node scripts/package-macos-dmg.mjs",
+    "site:dev": "node scripts/site-preview.mjs --port 5180",
+    "site:check": "node scripts/check-download-page.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",

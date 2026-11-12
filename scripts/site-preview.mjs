@@ -16,4 +16,4 @@ http.createServer(async(request,response)=>{
   if(!filename.startsWith(root)||!(await stat(filename)).isFile())throw new Error('Not found');
   const data=await readFile(filename);response.writeHead(200,{'Content-Type':types[path.extname(filename)]||'application/octet-stream','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Length':data.length});response.end(request.method==='HEAD'?undefined:data);
  }catch{response.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});response.end('Not found')}
-}).listen(port,'127.0.0.1',()=>console.log(`Mk.1 Lite download preview\nLocal: http://localhost:${port}/`));
+}).listen(port,'127.0.0.1',()=>console.log(`Mk.1 Lite download preview\nLocal: http://127.0.0.1:${port}/`));

@@ -73,6 +73,8 @@ Windows：在 GitHub Actions 手动运行 **Build Windows installer**，选择�
 
 静态页面位于 `docs/`，版本和下载状态由 `docs/releases.json` 管理。只有真实公开的 Release 资产才启用下载按钮，校验值与安装包对应。
 
+本地预览下载页：`npm run site:dev`，打开 `http://127.0.0.1:5180/`。启动后可用 `npm run site:check` 验证下载状态、语言和响应式布局。
+
 页面先本地预览，审核后可手动运行 **Publish download page**。该工作流不因普通推送自动发布。
 
 ## 数据与安全边界
