@@ -239,7 +239,7 @@ try {
     assert.ok(!uiText.includes(label));
   await page.screenshot({ path: "artifacts/desktop.png" });
   await page.setViewportSize({ width: 390, height: 844 });
-  await menu("menuView", "view-preview");
+  await page.locator('.mode-toggle [data-mode="preview"]').click();
   await expect(page.locator(".preview-pane")).toBeVisible();
   assert.ok(
     await page.evaluate(

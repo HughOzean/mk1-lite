@@ -22,7 +22,13 @@
     "icons": "node scripts/generate-icons.mjs",
     "package:mac:arm": "node scripts/package-macos-dmg.mjs",
     "site:dev": "node scripts/site-preview.mjs --port 5180",
-    "site:check": "node scripts/check-download-page.mjs"
+    "site:check": "node scripts/check-download-page.mjs",
+    "android:prepare": "npm run build",
+    "android:build": "bash scripts/build-android.sh",
+    "test:android": "node scripts/android-check.mjs",
+    "test:android:layout": "node scripts/android-layout-check.mjs",
+    "icons:android": "node scripts/generate-android-icons.mjs",
+    "test:android:open": "node scripts/android-open-intent-check.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",

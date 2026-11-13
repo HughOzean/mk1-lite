@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 export default defineConfig({
   clearScreen: false,
+  base: "./",
   build: {
     rollupOptions: {
       output: {

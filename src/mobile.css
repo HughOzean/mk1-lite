@@ -1,0 +1,270 @@
+.mobile-display-settings {
+  display: none;
+}
+html[data-android-app] .mobile-display-settings {
+  display: block;
+}
+html[data-android-app] body {
+  padding-top: var(--extra-top-space, 0px);
+}
+.mobile-actions,
+.mobile-brand,
+.mobile-welcome {
+  display: none;
+}
+@media (max-width: 800px) {
+  body {
+    padding: calc(env(safe-area-inset-top) + var(--extra-top-space, 0px))
+      env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  }
+  .mobile-display-settings {
+    display: block;
+  }
+  .sidebar {
+    top: var(--extra-top-space, 0px);
+  }
+  #app-menu {
+    display: none;
+  }
+  .topbar {
+    height: 64px;
+    padding: 0 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .breadcrumb {
+    min-width: 0;
+  }
+  .breadcrumb > span.mobile-brand {
+    display: inline;
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.6px;
+    white-space: nowrap;
+  }
+  .mobile-brand em {
+    color: var(--accent);
+    font-style: normal;
+    font-weight: 400;
+  }
+  .component-bar {
+    gap: 6px;
+  }
+  .component-bar .component-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border: 0;
+    background: transparent;
+  }
+  .component-bar .cheatsheet-button {
+    display: none;
+  }
+  .mode-toggle {
+    padding: 3px;
+    gap: 0;
+    border-radius: 12px;
+    background: var(--panel);
+    border-color: var(--border);
+  }
+  .mode-toggle button {
+    min-width: 54px;
+    height: 38px;
+    padding: 0 8px;
+    border-radius: 9px;
+    font-size: 12px;
+  }
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .document-tabs {
+    height: 49px;
+    flex-shrink: 0;
+    background: var(--sidebar);
+  }
+  .document-tab {
+    max-width: 230px;
+    min-width: 145px;
+  }
+  .tab-name {
+    padding-left: 16px;
+  }
+  .tab-name > span {
+    max-width: 150px;
+  }
+  .tab-close {
+    width: 44px;
+    height: 44px;
+    margin: 0;
+  }
+  .tab-close svg {
+    width: 14px;
+    height: 14px;
+  }
+  .format-toolbar {
+    flex-shrink: 0;
+    height: 52px;
+    padding: 0 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .format-tools {
+    flex: 0 0 auto;
+    gap: 2px;
+  }
+  .format-tools button {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+  }
+  #heading-level {
+    height: 40px;
+    border-radius: 8px;
+  }
+  #app[data-mode="preview"] .format-toolbar {
+    display: none;
+  }
+  .pane-label {
+    display: none;
+  }
+  #editor .cm-editor {
+    font-size: 16px;
+  }
+  #editor .cm-line {
+    font-size: 16px;
+    padding-right: 18px;
+  }
+  #editor .cm-content {
+    padding-top: 24px;
+    padding-bottom: 80px;
+  }
+  #preview {
+    padding: 28px 24px 60px;
+    font-size: max(16px, var(--preview-size));
+  }
+  #preview h1 {
+    font-size: 27px;
+    letter-spacing: -0.8px;
+    line-height: 1.5;
+    margin-top: 0;
+  }
+  #preview h2 {
+    font-size: 21px;
+    margin-top: 32px;
+  }
+  #preview blockquote {
+    border-left: 3px solid var(--accent);
+    background: #66cc660b;
+    border-radius: 0 10px 10px 0;
+    padding: 10px 16px;
+    margin: 24px 0;
+  }
+  #preview pre {
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 13px;
+  }
+  .statusbar {
+    height: 30px;
+    flex-shrink: 0;
+    padding: 0 16px;
+    font-size: 10px;
+    background: var(--bg);
+  }
+  .statusbar > div:last-child {
+    display: none;
+  }
+  .mobile-actions {
+    display: flex;
+    flex-shrink: 0;
+    padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: var(--sidebar);
+    color: var(--subtle);
+    gap: 6px;
+  }
+  .mobile-actions button {
+    flex: 1;
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    border-radius: 12px;
+    font-size: 10px;
+  }
+  .mobile-actions button svg {
+    width: 21px;
+    height: 21px;
+  }
+  .mobile-actions [data-action="save"] {
+    color: var(--accent);
+    background: #66cc6612;
+  }
+  .mobile-welcome {
+    display: flex;
+    flex-direction: column;
+    width: min(260px, 100%);
+  }
+  #empty-state .empty-mark {
+    font-size: 42px;
+  }
+  #empty-state > p {
+    display: none;
+  }
+  #empty-state .mobile-welcome button {
+    min-height: 48px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+  .sidebar {
+    position: fixed;
+    width: min(310px, 85vw);
+    padding-top: env(safe-area-inset-top);
+  }
+  .sidebar-open .sidebar-backdrop {
+    background: #0005;
+  }
+  .sidebar-tabs button,
+  .outline button {
+    min-height: 48px;
+  }
+  #settings {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 32px);
+    border-radius: 18px;
+  }
+  #settings .settings-body {
+    padding: 18px;
+  }
+  #shortcut-settings,
+  .shortcut-card {
+    display: none;
+  }
+  .setting-row {
+    min-height: 52px;
+  }
+  .search-window {
+    inset: 72px 10px auto;
+    width: auto;
+    max-height: calc(100dvh - 150px);
+  }
+  .search-window input {
+    font-size: 16px;
+  }
+  .search-window-close {
+    width: 44px;
+    height: 44px;
+  }
+  #toast {
+    bottom: calc(100px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 32px);
+  }
+}
+@media (max-width: 359px) {
+  .breadcrumb > span.mobile-brand {
+    display: none;
+  }
+}

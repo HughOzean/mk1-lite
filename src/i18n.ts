@@ -77,6 +77,7 @@ const keys = [
 type BaseKey = (typeof keys)[number];
 export type Key =
   | BaseKey
+  | keyof typeof displayMessages.en
   | keyof typeof associationMessages.en
   | keyof typeof workspaceMessages.en
   | keyof typeof menuMessages.en
@@ -1049,7 +1050,53 @@ const interactionMessages = {
     closeTabsRight: "Закрыть вкладки справа",
   },
 } as const;
+const displayMessages = {
+  zh: {
+    mobileDisplay: "屏幕适配",
+    topSpace: "顶部额外留白",
+    safeAreaHint:
+      "自动避开刘海、挖孔和系统栏。额外留白会叠加在安全区下方，旋转屏幕后仍然保留。",
+    squareCode: "正方形代码块",
+  },
+  en: {
+    mobileDisplay: "Screen layout",
+    topSpace: "Extra top spacing",
+    safeAreaHint:
+      "Automatically avoids cutouts and system bars. Extra spacing is added below the safe area and persists after rotation.",
+    squareCode: "Square code blocks",
+  },
+  pt: {
+    mobileDisplay: "Layout da tela",
+    topSpace: "Espaço extra superior",
+    safeAreaHint:
+      "Evita recortes e barras do sistema. O espaço extra é adicionado abaixo da área segura e mantido após a rotação.",
+    squareCode: "Blocos de código quadrados",
+  },
+  fr: {
+    mobileDisplay: "Disposition de l’écran",
+    topSpace: "Espace supérieur ajouté",
+    safeAreaHint:
+      "Évite les encoches et les barres système. L’espace ajouté sous la zone sûre est conservé après rotation.",
+    squareCode: "Blocs de code carrés",
+  },
+  de: {
+    mobileDisplay: "Bildschirmlayout",
+    topSpace: "Zusätzlicher Abstand oben",
+    safeAreaHint:
+      "Spart Aussparungen und Systemleisten aus. Der zusätzliche Abstand unter dem sicheren Bereich bleibt nach dem Drehen erhalten.",
+    squareCode: "Quadratische Codeblöcke",
+  },
+  ru: {
+    mobileDisplay: "Разметка экрана",
+    topSpace: "Дополнительный отступ сверху",
+    safeAreaHint:
+      "Учитывает вырезы и системные панели. Дополнительный отступ ниже безопасной области сохраняется после поворота.",
+    squareCode: "Квадратные блоки кода",
+  },
+} as const;
 export function translate(locale: Locale, key: Key): string {
+  if (key in displayMessages.en)
+    return displayMessages[locale][key as keyof typeof displayMessages.en];
   if (key in interactionMessages.en)
     return interactionMessages[locale][
       key as keyof typeof interactionMessages.en

@@ -41,6 +41,8 @@ import { createAppMenu } from "./app-menu";
 import { createShortcutSettings } from "./shortcuts";
 import { createTabContextMenu } from "./tab-context-menu";
 import "./style.css";
+import "./mobile.css";
+import { androidFile, isAndroidApp, watchAndroidOpenedFiles } from "./android";
 const icons: Record<string, string> = {
   file: "M6 3h8l4 4v14H6z M14 3v5h5",
   folder: "M3 6h6l2 2h10v12H3z",
@@ -90,6 +92,8 @@ interface Prefs {
   numbers: boolean;
   wrap: boolean;
   breaks: boolean;
+  topSpace: number;
+  squareCode: boolean;
   mode: "split" | "editor" | "preview";
   side: "files" | "outline";
 }
@@ -103,12 +107,19 @@ const defaults: Prefs = {
   numbers: true,
   wrap: true,
   breaks: false,
+  topSpace: 0,
+  squareCode: true,
   mode: "split",
   side: "files",
 };
+function workspaceStorage() {
+  return new URLSearchParams(location.search).has("android-preview")
+    ? sessionStorage
+    : localStorage;
+}
 function read(key: string) {
   try {
-    return localStorage.getItem(key);
+    return workspaceStorage().getItem(key);
   } catch {
     return null;
   }
@@ -125,19 +136,23 @@ if (!["split", "editor", "preview"].includes(prefs.mode)) prefs.mode = "split";
 prefs.size = Math.max(12, Math.min(22, prefs.size));
 prefs.lineHeight = Math.max(1.4, Math.min(2.4, prefs.lineHeight));
 prefs.width = Math.max(480, Math.min(1000, prefs.width));
+prefs.topSpace = Number.isFinite(prefs.topSpace)
+  ? Math.max(0, Math.min(96, prefs.topSpace))
+  : 0;
+document.documentElement.toggleAttribute("data-android-app", isAndroidApp());
 
 if (!["files", "outline"].includes(prefs.side)) prefs.side = "files";
 const t = (key: Key) => translate(prefs.locale, key);
 const button = (key: Key, ico: string, action: string, extra = "") =>
   `<button class="icon-button ${extra}" data-action="${action}" title="${t(key)}" aria-label="${t(key)}">${icon(ico)}</button>`;
 const app = document.querySelector<HTMLDivElement>("#app")!;
-app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk.1 Lite"><img class="brand-icon" src="./favicon.svg" alt="Mk.1"><span>Mk.1 <span class="brand-light">Lite</span><small>Mark One Lite</small></span></a><div class="sidebar-tabs" role="tablist"><button data-side="files" role="tab">${icon("folder")}<span data-i18n="files"></span></button><button data-side="outline" role="tab">${icon("list")}<span data-i18n="outline"></span></button></div><div id="file-tree"></div><section id="outline-panel"><div class="outline-head"><span data-i18n="outline"></span><div>${button("collapse", "fold", "fold")}${button("expand", "unfold", "unfold")}</div></div><nav class="outline" aria-label="Outline"></nav></section><div class="sidebar-footer">v0.2.6</div></aside><button class="sidebar-backdrop" data-action="sidebar" aria-label="Close sidebar"></button>
+app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk.1 Lite"><img class="brand-icon" src="./favicon.svg" alt="Mk.1"><span>Mk.1 <span class="brand-light">Lite</span><small>Mark One Lite</small></span></a><div class="sidebar-tabs" role="tablist"><button data-side="files" role="tab">${icon("folder")}<span data-i18n="files"></span></button><button data-side="outline" role="tab">${icon("list")}<span data-i18n="outline"></span></button></div><div id="file-tree"></div><section id="outline-panel"><div class="outline-head"><span data-i18n="outline"></span><div>${button("collapse", "fold", "fold")}${button("expand", "unfold", "unfold")}</div></div><nav class="outline" aria-label="Outline"></nav></section><div class="sidebar-footer">${isAndroidApp() ? "v0.2.8 · Android" : "v0.2.6"}</div></aside><button class="sidebar-backdrop" data-action="sidebar" aria-label="Close sidebar"></button>
 <div class="workspace"><header class="topbar"><div class="breadcrumb">${button("files", "menu", "sidebar", "mobile-menu")}</div><div class="component-bar" role="toolbar" aria-label="Components"><button class="component-icon cheatsheet-button" data-action="cheatsheet" aria-label="${t("cheatsheet")}" title="${t("cheatsheet")}">${icon("help")}</button><button class="component-icon settings-button" data-action="settings" aria-label="${t("settings")}" title="${t("settings")}">${icon("settings")}</button><div class="mode-toggle" role="group"><button data-mode="editor" aria-pressed="false"></button><button data-mode="preview" aria-pressed="false"></button></div></div></header>
 <div class="document-tabs"><div id="tab-list" role="tablist"></div><div class="view-switch" role="group" hidden>${(["editor", "split", "preview"] as const).map((v, i) => `<button data-mode="${v}" title="${t(v)}">${icon(["edit", "split", "eye"][i])}<span data-i18n="${v}"></span></button>`).join("")}</div></div>
 <div class="format-toolbar"><div class="format-tools"><select id="heading-level" aria-label="${t("heading")}">${[1, 2, 3, 4, 5].map((level) => `<option value="${level}">H${level}</option>`).join("")}</select><span class="divider"></span><button data-format="bold" title="${t("bold")}"><b>B</b></button><button data-format="italic" title="${t("italic")}"><i>I</i></button><button data-format="link" title="${t("link")}">${icon("link")}</button><span class="divider"></span><button data-format="quote" title="${t("quote")}">${icon("quote")}</button><button data-format="code" title="${t("code")}">${icon("code")}</button><button data-format="list" title="${t("list")}">${icon("list")}</button><span class="divider"></span><button data-format="table" title="${t("table")}">${icon("table")}</button></div></div>
 <main class="panes"><section class="editor-pane"><div class="pane-label"><span data-i18n="editor"></span></div><div id="editor"></div></section><section class="preview-pane"><div class="pane-label"><span data-i18n="preview"></span></div><div class="preview-scroll"><article id="preview"></article></div></section></main><section id="empty-state"><span class="empty-mark">Mk.1</span><h1>Mk.1 Lite</h1><p data-i18n="emptyMenuHint"></p></section>
 <footer class="statusbar"><div><span class="status-dot"></span><span id="save-status"></span><span class="status-separator">/</span><span id="stats"></span></div><div><span id="cursor">Ln 1, Col 1</span><span class="status-separator">|</span><span>UTF-8</span><span class="status-separator">|</span><span id="locale-label"></span></div></footer></div>
-<dialog id="settings"><div class="settings-top"><div><h2 data-i18n="settings"></h2></div>${button("close", "close", "close-settings")}</div><div class="settings-body"><p class="settings-intro" data-i18n="renderHint"></p><h3 data-i18n="appearance"></h3><label class="setting-row"><span data-i18n="language"></span><select id="language">${Object.entries(
+<dialog id="settings"><div class="settings-top"><div><h2 data-i18n="settings"></h2></div>${button("close", "close", "close-settings")}</div><div class="settings-body"><p class="settings-intro" data-i18n="renderHint"></p><section class="mobile-display-settings"><h3 data-i18n="mobileDisplay"></h3><p class="settings-intro" data-i18n="safeAreaHint"></p><label class="range-row"><span><span data-i18n="topSpace"></span><output id="topSpace-value"></output></span><input id="topSpace" type="range" min="0" max="96" step="4" data-unit="px"></label></section><h3 data-i18n="appearance"></h3><label class="setting-row"><span data-i18n="language"></span><select id="language">${Object.entries(
   languages,
 )
   .map(([v, label]) => `<option value="${v}">${label}</option>`)
@@ -154,7 +169,50 @@ app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk
   )
   .join(
     "",
-  )}<h3 data-i18n="editor"></h3><label class="setting-row"><span data-i18n="lineNumbers"></span><span class="switch-control"><input id="numbers" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="wrap"></span><span class="switch-control"><input id="wrap" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="softBreaks"></span><span class="switch-control"><input id="breaks" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><section id="file-associations" hidden><h3 data-i18n="fileAssociations"></h3><p class="settings-intro" data-i18n="defaultAppHint"></p><button class="association-button" data-action="set-default-app" data-i18n="setDefaultApp"></button><p id="association-status" role="status" aria-live="polite"></p></section><section id="shortcut-settings"></section><div class="shortcut-card"><span data-i18n="shortcuts"></span><div><span data-i18n="save"></span><kbd>⌘ / Ctrl S</kbd></div><div><span data-i18n="find"></span><kbd>⌘ / Ctrl F</kbd></div><div><span data-i18n="bold"></span><kbd>⌘ / Ctrl B</kbd></div></div></div><div class="settings-bottom"><button data-action="reset" data-i18n="reset"></button><button class="primary" data-action="close-settings" data-i18n="close"></button></div></dialog><input type="file" id="file-input" accept=".md,.markdown,.mdown,.txt,text/plain,text/markdown" multiple hidden><div id="toast" role="status"></div>`;
+  )}<label class="setting-row"><span data-i18n="squareCode"></span><span class="switch-control"><input id="squareCode" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><h3 data-i18n="editor"></h3><label class="setting-row"><span data-i18n="lineNumbers"></span><span class="switch-control"><input id="numbers" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="wrap"></span><span class="switch-control"><input id="wrap" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="softBreaks"></span><span class="switch-control"><input id="breaks" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><section id="file-associations" hidden><h3 data-i18n="fileAssociations"></h3><p class="settings-intro" data-i18n="defaultAppHint"></p><button class="association-button" data-action="set-default-app" data-i18n="setDefaultApp"></button><p id="association-status" role="status" aria-live="polite"></p></section><section id="shortcut-settings"></section><div class="shortcut-card"><span data-i18n="shortcuts"></span><div><span data-i18n="save"></span><kbd>⌘ / Ctrl S</kbd></div><div><span data-i18n="find"></span><kbd>⌘ / Ctrl F</kbd></div><div><span data-i18n="bold"></span><kbd>⌘ / Ctrl B</kbd></div></div></div><div class="settings-bottom"><button data-action="reset" data-i18n="reset"></button><button class="primary" data-action="close-settings" data-i18n="close"></button></div></dialog><input type="file" id="file-input" accept=".md,.markdown,.mdown,.txt,text/plain,text/markdown" multiple hidden><div id="toast" role="status"></div>`;
+const mobileNav = document.createElement("nav");
+mobileNav.className = "mobile-actions";
+mobileNav.setAttribute("aria-label", "Document actions");
+mobileNav.innerHTML = (
+  [
+    ["new", "plus"],
+    ["open", "open"],
+    ["save", "save"],
+    ["find", "search"],
+  ] as const
+)
+  .map(
+    ([action, ico]) =>
+      `<button data-action="${action}">${icon(ico)}<span data-i18n="${action}"></span></button>`,
+  )
+  .join("");
+app.after(mobileNav);
+mobileNav.addEventListener("click", (event) => {
+  const action = (event.target as HTMLElement).closest<HTMLElement>(
+    "[data-action]",
+  )?.dataset.action;
+  if (action) void performAction(action);
+});
+document
+  .querySelector(".breadcrumb")!
+  .insertAdjacentHTML(
+    "beforeend",
+    '<span class="mobile-brand">Mk.1 <em>Lite</em></span>',
+  );
+document
+  .querySelector("#empty-state")!
+  .insertAdjacentHTML(
+    "beforeend",
+    `<div class="mobile-welcome"><button data-mobile-action="new" class="primary" data-i18n="new"></button><button data-mobile-action="open" data-i18n="open"></button></div>`,
+  );
+document
+  .querySelector(".mobile-welcome")!
+  .addEventListener("click", (event) => {
+    const action = (event.target as HTMLElement).closest<HTMLElement>(
+      "[data-mobile-action]",
+    )?.dataset.mobileAction;
+    if (action) void performAction(action);
+  });
 const menuContainer = document.createElement("nav");
 menuContainer.id = "app-menu";
 app.before(menuContainer);
@@ -464,14 +522,14 @@ function refreshMenus() {
 }
 function persist() {
   try {
-    localStorage.setItem("m1-settings", JSON.stringify(prefs));
+    workspaceStorage().setItem("m1-settings", JSON.stringify(prefs));
   } catch {
     toast(t("storageError"));
   }
 }
 function saveDraft() {
   try {
-    localStorage.setItem(
+    workspaceStorage().setItem(
       "m1-workspace-v2",
       JSON.stringify({
         documents: tabs.map((doc) => ({
@@ -487,7 +545,7 @@ function saveDraft() {
         activeIndex: tabs.findIndex((doc) => doc.id === activeId),
       }),
     );
-    localStorage.removeItem("m1-draft");
+    workspaceStorage().removeItem("m1-draft");
     document.querySelector("#save-status")!.textContent = t("draft");
   } catch {
     document.querySelector("#save-status")!.textContent = t("storageError");
@@ -561,6 +619,11 @@ function updateTabs() {
       '.format-tools button,.format-tools select,.save-button,[data-action="fold"],[data-action="unfold"],[data-action="find"]',
     )
     .forEach((el) => (el.disabled = !active));
+  mobileNav
+    .querySelectorAll<HTMLButtonElement>(
+      '[data-action="save"], [data-action="find"]',
+    )
+    .forEach((button) => (button.disabled = !active));
   refreshMenus();
   updateComponentBar();
   tabContext.refresh();
@@ -569,7 +632,7 @@ function updateTabs() {
   if (lastNativeTitle === title) return;
   lastNativeTitle = title;
   const generation = ++titleGeneration;
-  if (isNative())
+  if (nativeDesktop())
     void import("@tauri-apps/api/window")
       .then(async ({ getCurrentWindow }) => {
         if (generation === titleGeneration)
@@ -731,10 +794,14 @@ function applyPrefs() {
     ["--preview-size", `${prefs.size}px`],
     ["--preview-line", String(prefs.lineHeight)],
     ["--preview-width", `${prefs.width}px`],
+    ["--extra-top-space", `${prefs.topSpace}px`],
   ])
     document.documentElement.style.setProperty(name, value);
   document.querySelector("#preview")!.className = `type-${prefs.style}`;
   app.dataset.mode = prefs.mode;
+  document
+    .querySelector("#preview")!
+    .toggleAttribute("data-square-code", prefs.squareCode);
   document
     .querySelectorAll<HTMLElement>("[data-i18n]")
     .forEach((el) => (el.textContent = t(el.dataset.i18n as Key)));
@@ -777,6 +844,8 @@ function applyPrefs() {
     "numbers",
     "wrap",
     "breaks",
+    "topSpace",
+    "squareCode",
   ]) {
     const el = document.getElementById(key) as HTMLInputElement;
     const value = (prefs as any)[key === "language" ? "locale" : key];
@@ -810,7 +879,24 @@ function toast(message: string) {
 async function openFile() {
   if (filePickerActive) return;
   filePickerActive = true;
-  if (isNative()) {
+  if (isAndroidApp()) {
+    try {
+      const file = await androidFile("open");
+      if (file) {
+        const existing = tabs.find((doc) => doc.sourceKey === file.uri);
+        if (existing) activateDocument(existing.id);
+        else {
+          addDocument({ path: null, name: file.name, text: file.text });
+          current()!.sourceKey = file.uri;
+          saveDraft();
+        }
+      }
+    } catch {
+      toast(t("fileError"));
+    } finally {
+      filePickerActive = false;
+    }
+  } else if (isNative()) {
     try {
       const { open } = await import("@tauri-apps/plugin-dialog");
       const paths = await open({
@@ -857,7 +943,18 @@ async function saveFile(id = activeId, saveAs = false): Promise<boolean> {
   const text = doc.state.doc.toString(),
     revision = doc.revision;
   try {
-    if (isNative()) {
+    if (isAndroidApp()) {
+      const file = await androidFile(
+        "save",
+        doc.name,
+        text,
+        !saveAs && doc.sourceKey?.startsWith("content://") ? doc.sourceKey : "",
+      );
+      if (!file) return false;
+      doc.name = file.name;
+      doc.sourceKey = file.uri;
+      toast(t("savedFile"));
+    } else if (isNative()) {
       const { save } = await import("@tauri-apps/plugin-dialog");
       const path =
         (!saveAs && doc.path) ||
@@ -1264,6 +1361,7 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape")
     app.classList.remove("focus-mode", "sidebar-open");
 });
+window.addEventListener("pagehide", saveDraft);
 window.addEventListener("beforeunload", (event) => {
   saveDraft();
   if (tabs.some((doc) => doc.dirty)) {
@@ -1338,11 +1436,41 @@ async function initializeNativeFiles() {
     toast(t("fileError"));
   }
 }
+// Preview uses isolated session storage, so sample edits never replace real drafts.
 restoreWorkspace();
+if (
+  new URLSearchParams(location.search).has("android-preview") &&
+  !tabs.length
+) {
+  addDocument({
+    path: null,
+    name: "随手记.md",
+    text: "# 把灵感，留在此刻\n\n一个安静的空间，记录想法，也整理思绪。\n\n## 今天的计划\n\n- 记录一个新想法\n- 整理阅读笔记\n- 留一点时间给自己\n\n> 专注于文字，让思绪自然流动。\n\n## 从简单开始\n\n用 **Markdown** 写下日常，在编辑与预览之间轻松切换。\n\n```markdown\n# 一个标题\n让记录成为习惯。\n```\n",
+  });
+  prefs.mode = "preview";
+}
 const restoredActiveId = activeId;
 activeId = null;
 applyPrefs();
 activateDocument(restoredActiveId);
+if (isAndroidApp()) {
+  watchAndroidOpenedFiles(
+    (file) => {
+      if (file.error) {
+        toast(t("fileError"));
+        return;
+      }
+      const existing = tabs.find((doc) => doc.sourceKey === file.uri);
+      if (existing) activateDocument(existing.id);
+      else {
+        addDocument({ path: null, name: file.name, text: file.text });
+        current()!.sourceKey = file.uri;
+        saveDraft();
+      }
+    },
+    () => toast(t("fileError")),
+  );
+}
 if (isNative()) {
   if (/Mac/.test(navigator.platform))
     document.querySelector<HTMLElement>("#file-associations")!.hidden = false;

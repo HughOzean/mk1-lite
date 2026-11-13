@@ -1623,3 +1623,12 @@ body {
     height: 33px;
   }
 }
+
+/* A viewport-sized code surface keeps short snippets usable on touch screens. */
+#preview[data-square-code] pre {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: auto;
+  overscroll-behavior: contain;
+  white-space: pre;
+}

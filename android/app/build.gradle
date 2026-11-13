@@ -1,0 +1,21 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.mark1light.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.mark1light.app'
+        minSdk 26
+        targetSdk 35
+        versionCode 208
+        versionName '0.2.8'
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
+// Always bundle the current frontend, including all dynamic chunks and icons.
+tasks.register('syncWebAssets', Sync) {
+    from '../../dist'
+    into 'src/main/assets/web'
+    doFirst { if (!file('../../dist/index.html').exists()) throw new GradleException('Run npm run android:prepare first') }
+}
+tasks.named('preBuild').configure { dependsOn 'syncWebAssets' }

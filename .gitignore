@@ -17,3 +17,9 @@ src-tauri/gen/
 *.key
 *.p12
 *.pfx
+
+# Android local build outputs
+android/.gradle/
+android/**/build/
+android/local.properties
+android/app/src/main/assets/web/

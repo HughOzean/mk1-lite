@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application android:label="Mk.1 Lite" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:theme="@style/AppTheme" android:allowBackup="false" android:usesCleartextTraffic="false" android:supportsRtl="true">
+        <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop" android:windowSoftInputMode="adjustResize" android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+            <!-- Only Markdown-specific MIME types match opaque provider URIs.
+                 Generic text/binary types require a visible Markdown extension. -->
+            <intent-filter android:label="Markdown 文件">
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="text/markdown" />
+                <data android:mimeType="text/x-markdown" />
+            </intent-filter>
+            <!-- A generic MIME is accepted only when the URI path itself ends in
+                 a Markdown extension; this is not an all-files registration. -->
+            <intent-filter android:label="Markdown 文件">
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:host="*" />
+                <data android:scheme="file" android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.md" />
+                <data android:pathSuffix=".md" />
+                <data android:pathPattern=".*\\.MD" />
+                <data android:pathSuffix=".MD" />
+                <data android:pathPattern=".*\\.markdown" />
+                <data android:pathSuffix=".markdown" />
+                <data android:pathPattern=".*\\.MARKDOWN" />
+                <data android:pathSuffix=".MARKDOWN" />
+                <data android:pathPattern=".*\\.mdown" />
+                <data android:pathSuffix=".mdown" />
+                <data android:pathPattern=".*\\.MDOWN" />
+                <data android:pathSuffix=".MDOWN" />
+            </intent-filter>
+            <!-- No-MIME URIs need a separate extension-constrained filter. -->
+            <intent-filter android:label="Markdown 文件">
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:host="*" />
+                <data android:scheme="file" android:host="*" />
+                <data android:pathPattern=".*\\.md" />
+                <data android:pathSuffix=".md" />
+                <data android:pathPattern=".*\\.MD" />
+                <data android:pathSuffix=".MD" />
+                <data android:pathPattern=".*\\.markdown" />
+                <data android:pathSuffix=".markdown" />
+                <data android:pathPattern=".*\\.MARKDOWN" />
+                <data android:pathSuffix=".MARKDOWN" />
+                <data android:pathPattern=".*\\.mdown" />
+                <data android:pathSuffix=".mdown" />
+                <data android:pathPattern=".*\\.MDOWN" />
+                <data android:pathSuffix=".MDOWN" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
