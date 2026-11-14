@@ -1,6 +1,6 @@
 {
   "name": "mark1light",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -30,7 +30,9 @@
     "test:android": "node scripts/android-check.mjs",
     "test:android:layout": "node scripts/android-layout-check.mjs",
     "icons:android": "node scripts/generate-android-icons.mjs",
-    "test:android:open": "node scripts/android-open-intent-check.mjs"
+    "test:android:open": "node scripts/android-open-intent-check.mjs",
+    "test:desktop": "node scripts/desktop-features-check.mjs",
+    "test:updater": "node scripts/updater-check.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",
@@ -44,6 +46,8 @@
     "@tauri-apps/plugin-dialog": "^2.0.0",
     "@tauri-apps/plugin-fs": "^2.0.0",
     "@tauri-apps/plugin-opener": "^2.7.3",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "markdown-it": "^14.1.0"
   },
   "devDependencies": {

@@ -1,3 +1,5 @@
+import appInfo from "../package.json";
+import { createDesktopUpdater } from "./updater";
 import { tags } from "@lezer/highlight";
 import { EditorState, Compartment } from "@codemirror/state";
 import {
@@ -69,6 +71,13 @@ const icons: Record<string, string> = {
   unfold: "m8 7 4-4 4 4 M8 17l4 4 4-4 M4 12h16",
   menu: "M4 6h16 M4 12h16 M4 18h16",
   help: "M9 9a3 3 0 1 1 5 2.2c-1.3.8-2 1.3-2 3 M12 18h.01 M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0",
+  orderedList:
+    "M9 6h12 M9 12h12 M9 18h12 M3 4h1v4 M3 11h2l-2 3h2 M3 17h2v4H3 M3 19h2",
+  strike: "M5 12h14 M16 6c-5-4-12 1-6 4 M8 18c5 4 12-1 6-4",
+  inlineCode: "m8 8-4 4 4 4 M16 8l4 4-4 4 M14 5l-4 14",
+  rule: "M4 12h16",
+  zoomIn: "M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14 M15 15l6 6 M7 10h6 M10 7v6",
+  zoomOut: "M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14 M15 15l6 6 M7 10h6",
   table: "M3 4h18v16H3z M3 9h18 M9 4v16 M15 4v16",
   sun: "M12 3v2 M12 19v2 M3 12h2 M19 12h2 M5 5l2 2 M17 17l2 2 M5 19l2-2 M17 7l2-2 M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
 };
@@ -86,6 +95,7 @@ interface Prefs {
   locale: Locale;
   theme: "dark" | "light" | "system";
   size: number;
+  editorSize: number;
   lineHeight: number;
   width: number;
   style: string;
@@ -101,6 +111,7 @@ const defaults: Prefs = {
   locale: "zh",
   theme: "dark",
   size: 15,
+  editorSize: 13,
   lineHeight: 1.85,
   width: 760,
   style: "standard",
@@ -133,6 +144,9 @@ try {
 if (!(prefs.locale in languages)) prefs.locale = "zh";
 if (!["dark", "light", "system"].includes(prefs.theme)) prefs.theme = "dark";
 if (!["split", "editor", "preview"].includes(prefs.mode)) prefs.mode = "split";
+prefs.editorSize = Number.isFinite(prefs.editorSize)
+  ? Math.max(10, Math.min(28, prefs.editorSize))
+  : 13;
 prefs.size = Math.max(12, Math.min(22, prefs.size));
 prefs.lineHeight = Math.max(1.4, Math.min(2.4, prefs.lineHeight));
 prefs.width = Math.max(480, Math.min(1000, prefs.width));
@@ -146,10 +160,10 @@ const t = (key: Key) => translate(prefs.locale, key);
 const button = (key: Key, ico: string, action: string, extra = "") =>
   `<button class="icon-button ${extra}" data-action="${action}" title="${t(key)}" aria-label="${t(key)}">${icon(ico)}</button>`;
 const app = document.querySelector<HTMLDivElement>("#app")!;
-app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk.1 Lite"><img class="brand-icon" src="./favicon.svg" alt="Mk.1"><span>Mk.1 <span class="brand-light">Lite</span><small>Mark One Lite</small></span></a><div class="sidebar-tabs" role="tablist"><button data-side="files" role="tab">${icon("folder")}<span data-i18n="files"></span></button><button data-side="outline" role="tab">${icon("list")}<span data-i18n="outline"></span></button></div><div id="file-tree"></div><section id="outline-panel"><div class="outline-head"><span data-i18n="outline"></span><div>${button("collapse", "fold", "fold")}${button("expand", "unfold", "unfold")}</div></div><nav class="outline" aria-label="Outline"></nav></section><div class="sidebar-footer">${isAndroidApp() ? "v0.2.8 · Android" : "v0.2.6"}</div></aside><button class="sidebar-backdrop" data-action="sidebar" aria-label="Close sidebar"></button>
+app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk.1 Lite"><img class="brand-icon" src="./favicon.svg" alt="Mk.1"><span>Mk.1 <span class="brand-light">Lite</span><small>Mark One Lite</small></span></a><div class="sidebar-tabs" role="tablist"><button data-side="files" role="tab">${icon("folder")}<span data-i18n="files"></span></button><button data-side="outline" role="tab">${icon("list")}<span data-i18n="outline"></span></button></div><div id="file-tree"></div><section id="outline-panel"><div class="outline-head"><span data-i18n="outline"></span><div>${button("outlineCollapse", "fold", "outline-collapse")}${button("outlineExpand", "unfold", "outline-expand")}</div></div><nav class="outline" aria-label="Outline"></nav></section><div class="sidebar-footer">${isAndroidApp() ? "v0.2.8 · Android" : `v${appInfo.version}`}</div></aside><button class="sidebar-backdrop" data-action="sidebar" aria-label="Close sidebar"></button>
 <div class="workspace"><header class="topbar"><div class="breadcrumb">${button("files", "menu", "sidebar", "mobile-menu")}</div><div class="component-bar" role="toolbar" aria-label="Components"><button class="component-icon cheatsheet-button" data-action="cheatsheet" aria-label="${t("cheatsheet")}" title="${t("cheatsheet")}">${icon("help")}</button><button class="component-icon settings-button" data-action="settings" aria-label="${t("settings")}" title="${t("settings")}">${icon("settings")}</button><div class="mode-toggle" role="group"><button data-mode="editor" aria-pressed="false"></button><button data-mode="preview" aria-pressed="false"></button></div></div></header>
-<div class="document-tabs"><div id="tab-list" role="tablist"></div><div class="view-switch" role="group" hidden>${(["editor", "split", "preview"] as const).map((v, i) => `<button data-mode="${v}" title="${t(v)}">${icon(["edit", "split", "eye"][i])}<span data-i18n="${v}"></span></button>`).join("")}</div></div>
-<div class="format-toolbar"><div class="format-tools"><select id="heading-level" aria-label="${t("heading")}">${[1, 2, 3, 4, 5].map((level) => `<option value="${level}">H${level}</option>`).join("")}</select><span class="divider"></span><button data-format="bold" title="${t("bold")}"><b>B</b></button><button data-format="italic" title="${t("italic")}"><i>I</i></button><button data-format="link" title="${t("link")}">${icon("link")}</button><span class="divider"></span><button data-format="quote" title="${t("quote")}">${icon("quote")}</button><button data-format="code" title="${t("code")}">${icon("code")}</button><button data-format="list" title="${t("list")}">${icon("list")}</button><span class="divider"></span><button data-format="table" title="${t("table")}">${icon("table")}</button></div></div>
+<div class="document-tabs"><div id="tab-list" role="tablist"></div>${button("new", "plus", "new", "new-document-tab")}<div class="view-switch" role="group" hidden>${(["editor", "split", "preview"] as const).map((v, i) => `<button data-mode="${v}" title="${t(v)}">${icon(["edit", "split", "eye"][i])}<span data-i18n="${v}"></span></button>`).join("")}</div></div>
+<div class="format-toolbar"><div class="format-tools"><select id="heading-level" aria-label="${t("heading")}">${[1, 2, 3, 4, 5].map((level) => `<option value="${level}">H${level}</option>`).join("")}</select><span class="divider"></span><button data-format="bold" title="${t("bold")}"><b>B</b></button><button data-format="italic" title="${t("italic")}"><i>I</i></button><button data-format="link" title="${t("link")}">${icon("link")}</button><span class="divider"></span><button data-format="quote" title="${t("quote")}">${icon("quote")}</button><button data-format="code" title="${t("code")}">${icon("code")}</button><button data-format="list" title="${t("list")}">${icon("list")}</button><span class="divider"></span><button data-format="table" title="${t("table")}">${icon("table")}</button><button data-format="orderedList" title="${t("orderedList")}">${icon("orderedList")}</button><button data-format="strike" title="${t("strike")}">${icon("strike")}</button><button data-format="inlineCode" title="${t("inlineCode")}">${icon("inlineCode")}</button><button data-format="rule" title="${t("rule")}">${icon("rule")}</button></div><div class="editor-zoom" role="group" aria-label="${t("editorFontSize")}">${button("zoomOut", "zoomOut", "zoom-out")}<output id="editor-size-label">${prefs.editorSize}px</output>${button("zoomIn", "zoomIn", "zoom-in")}</div></div>
 <main class="panes"><section class="editor-pane"><div class="pane-label"><span data-i18n="editor"></span></div><div id="editor"></div></section><section class="preview-pane"><div class="pane-label"><span data-i18n="preview"></span></div><div class="preview-scroll"><article id="preview"></article></div></section></main><section id="empty-state"><span class="empty-mark">Mk.1</span><h1>Mk.1 Lite</h1><p data-i18n="emptyMenuHint"></p></section>
 <footer class="statusbar"><div><span class="status-dot"></span><span id="save-status"></span><span class="status-separator">/</span><span id="stats"></span></div><div><span id="cursor">Ln 1, Col 1</span><span class="status-separator">|</span><span>UTF-8</span><span class="status-separator">|</span><span id="locale-label"></span></div></footer></div>
 <dialog id="settings"><div class="settings-top"><div><h2 data-i18n="settings"></h2></div>${button("close", "close", "close-settings")}</div><div class="settings-body"><p class="settings-intro" data-i18n="renderHint"></p><section class="mobile-display-settings"><h3 data-i18n="mobileDisplay"></h3><p class="settings-intro" data-i18n="safeAreaHint"></p><label class="range-row"><span><span data-i18n="topSpace"></span><output id="topSpace-value"></output></span><input id="topSpace" type="range" min="0" max="96" step="4" data-unit="px"></label></section><h3 data-i18n="appearance"></h3><label class="setting-row"><span data-i18n="language"></span><select id="language">${Object.entries(
@@ -231,6 +245,8 @@ interface TabDocument {
   revision: number;
   saving: boolean;
   scrollTop: number;
+  outlineCollapsed?: Set<number>;
+  outlineSignature?: string;
 }
 interface OpenedFile {
   path: string | null;
@@ -245,6 +261,7 @@ let activeId: string | null = null;
 let nextId = 0,
   titleGeneration = 0;
 let lastNativeTitle: string | null = null;
+let desktopUpdater: ReturnType<typeof createDesktopUpdater> | undefined;
 let saving = false,
   filePickerActive = false;
 let renderTimer: ReturnType<typeof setTimeout>,
@@ -261,7 +278,7 @@ const current = () => tabs.find((doc) => doc.id === activeId);
 const editorTheme = EditorView.theme({
   "&": {
     height: "100%",
-    fontSize: "13px",
+    fontSize: "var(--editor-size, 13px)",
     backgroundColor: "var(--editor-bg)",
     color: "var(--text)",
   },
@@ -760,16 +777,31 @@ function updateStatus() {
 function updatePreview() {
   const source = current() ? view.state.doc.toString() : "";
   document.querySelector("#preview")!.innerHTML = render(source, prefs.breaks);
-  const hs = headings(source);
+  renderOutline();
+  updateStatus();
+}
+function renderOutline() {
+  const hs = headings(current() ? view.state.doc.toString() : "");
+  const doc = current();
+  const signature = JSON.stringify(hs.map((h) => [h.level, h.text]));
+  if (doc && doc.outlineSignature !== signature) {
+    doc.outlineCollapsed = new Set();
+    doc.outlineSignature = signature;
+  }
+  const collapsed = doc?.outlineCollapsed || new Set<number>();
+  let hiddenBelow = 7;
   document.querySelector(".outline")!.innerHTML = hs.length
     ? hs
-        .map(
-          (h, i) =>
-            `<button data-heading="${i}" style="--depth:${h.level - 1}" title="${escape(h.text)}"><span class="outline-hash">${h.level === 1 ? "#" : "·"}</span>${escape(h.text)}</button>`,
-        )
+        .map((h, i) => {
+          if (h.level > hiddenBelow) return "";
+          hiddenBelow = 7;
+          const branch = !!hs[i + 1] && hs[i + 1].level > h.level;
+          const folded = branch && collapsed.has(i);
+          if (folded) hiddenBelow = h.level;
+          return `<div class="outline-row" style="--depth:${h.level - 1}">${branch ? `<button class="outline-toggle" data-outline-toggle="${i}" aria-expanded="${!folded}" aria-label="${escape(t(folded ? "expand" : "collapse"))}: ${escape(h.text)}">${icon("chevron")}</button>` : '<span class="outline-leaf"></span>'}<button class="outline-heading" data-heading="${i}" title="${escape(h.text)}"><span class="outline-hash">${h.level === 1 ? "#" : "·"}</span><span>${escape(h.text)}</span></button></div>`;
+        })
         .join("")
     : `<p class="empty-outline">${t("emptyOutline")}</p>`;
-  updateStatus();
 }
 function applySidebar() {
   document.querySelector<HTMLElement>("#file-tree")!.hidden =
@@ -792,6 +824,7 @@ function applyPrefs() {
   document.documentElement.lang = prefs.locale;
   for (const [name, value] of [
     ["--preview-size", `${prefs.size}px`],
+    ["--editor-size", `${prefs.editorSize}px`],
     ["--preview-line", String(prefs.lineHeight)],
     ["--preview-width", `${prefs.width}px`],
     ["--extra-top-space", `${prefs.topSpace}px`],
@@ -827,6 +860,10 @@ function applyPrefs() {
       fold: "collapse",
       unfold: "expand",
       sidebar: "files",
+      "outline-collapse": "outlineCollapse",
+      "outline-expand": "outlineExpand",
+      "zoom-in": "zoomIn",
+      "zoom-out": "zoomOut",
       "close-settings": "close",
     };
     if (labels[el.dataset.action!]) {
@@ -859,6 +896,14 @@ function applyPrefs() {
   document
     .querySelector("#heading-level")!
     .setAttribute("aria-label", t("heading"));
+  document.querySelector("#editor-size-label")!.textContent =
+    `${prefs.editorSize}px`;
+  document.querySelector<HTMLButtonElement>(
+    '[data-action="zoom-out"]',
+  )!.disabled = prefs.editorSize <= 10;
+  document.querySelector<HTMLButtonElement>(
+    '[data-action="zoom-in"]',
+  )!.disabled = prefs.editorSize >= 28;
   syncEditorSettings();
   applySidebar();
   updateTabs();
@@ -1081,7 +1126,7 @@ function format(kind: string, level = 1) {
     applyPrefs();
   }
   const { from, to } = view.state.selection.main;
-  if (["heading", "quote", "list"].includes(kind)) {
+  if (["heading", "quote", "list", "orderedList"].includes(kind)) {
     const first = view.state.doc.lineAt(from).number,
       last = view.state.doc.lineAt(to > from ? to - 1 : to).number;
     const prefix =
@@ -1095,20 +1140,36 @@ function format(kind: string, level = 1) {
         ? /^#{1,6}[ \t]+/
         : kind === "quote"
           ? /^>[ \t]?/
-          : /^-[ \t]+/;
+          : kind === "orderedList"
+            ? /^\d+[.)][ \t]+/
+            : /^-[ \t]+/;
     const lines = Array.from({ length: last - first + 1 }, (_, i) =>
       view.state.doc.line(first + i),
     );
     const remove =
-      kind !== "heading" && lines.every((line) => line.text.startsWith(prefix));
+      kind !== "heading" && lines.every((line) => pattern.test(line.text));
     const changes = view.state.changes(
-      lines.map((line) => ({
+      lines.map((line, index) => ({
         from: line.from,
         to: line.from + (line.text.match(pattern)?.[0].length || 0),
-        insert: remove ? "" : prefix,
+        insert: remove
+          ? ""
+          : kind === "orderedList"
+            ? `${index + 1}. `
+            : prefix,
       })),
     );
     view.dispatch({ changes, selection: view.state.selection.map(changes) });
+    view.focus();
+    return;
+  }
+  if (kind === "rule") {
+    const before = from > 0 ? "\n\n" : "";
+    const text = `${before}---\n\n`;
+    view.dispatch({
+      changes: { from, insert: text },
+      selection: { anchor: from + text.length },
+    });
     view.focus();
     return;
   }
@@ -1128,12 +1189,23 @@ function format(kind: string, level = 1) {
   }
   const selected = view.state.sliceDoc(from, to);
   const formats: Record<string, [string, string, string]> = {
+    strike: ["~~", "~~", "text"],
+    inlineCode: ["`", "`", "code"],
     bold: ["**", "**", "text"],
     italic: ["*", "*", "text"],
     link: ["[", "](https://example.com)", "link"],
     code: ["\n```\n", "\n```\n", "code"],
   };
-  const [before, after, fallback] = formats[kind];
+  if (!formats[kind]) return;
+  let [before, after, fallback] = formats[kind];
+  if (kind === "inlineCode" && selected.includes("`")) {
+    const length =
+      Math.max(
+        ...[...selected.matchAll(/`+/g)].map((match) => match[0].length),
+      ) + 1;
+    before = after = "`".repeat(length) + " ";
+    after = " " + "`".repeat(length);
+  }
   const content = selected || fallback;
   view.dispatch({
     changes: { from, to, insert: before + content + after },
@@ -1147,9 +1219,22 @@ function format(kind: string, level = 1) {
 app.addEventListener("click", async (event) => {
   const target = event.target as HTMLElement;
   const button = target.closest<HTMLElement>(
-    "button[data-action],button[data-format],button[data-mode],button[data-heading],button[data-side],button[data-tab],button[data-close-tab]",
+    "button[data-action],button[data-format],button[data-mode],button[data-heading],button[data-side],button[data-tab],button[data-close-tab],button[data-outline-toggle]",
   );
   if (!button) return;
+  if (button.dataset.outlineToggle !== undefined) {
+    const doc = current();
+    if (!doc) return;
+    const index = Number(button.dataset.outlineToggle);
+    const collapsed = (doc.outlineCollapsed ||= new Set<number>());
+    if (collapsed.has(index)) collapsed.delete(index);
+    else collapsed.add(index);
+    renderOutline();
+    document
+      .querySelector<HTMLButtonElement>(`[data-outline-toggle="${index}"]`)
+      ?.focus();
+    return;
+  }
   if (button.dataset.tab) {
     activateDocument(button.dataset.tab);
     return;
@@ -1226,6 +1311,29 @@ app.addEventListener("click", async (event) => {
     case "sidebar":
       app.classList.toggle("sidebar-open");
       break;
+    case "zoom-in":
+    case "zoom-out":
+      prefs.editorSize = Math.max(
+        10,
+        Math.min(
+          28,
+          prefs.editorSize + (button.dataset.action === "zoom-in" ? 1 : -1),
+        ),
+      );
+      applyPrefs();
+      view.requestMeasure();
+      break;
+    case "outline-collapse":
+    case "outline-expand": {
+      const doc = current();
+      if (!doc) break;
+      doc.outlineCollapsed =
+        button.dataset.action === "outline-collapse"
+          ? new Set(headings(view.state.doc.toString()).map((_, i) => i))
+          : new Set();
+      renderOutline();
+      break;
+    }
     case "fold":
       foldAll(view);
       break;
@@ -1315,6 +1423,14 @@ document.querySelector("#preview")!.addEventListener("click", async (event) => {
 window.addEventListener(
   "keydown",
   (event) => {
+    if (
+      desktopUpdater?.updateInProgress &&
+      !(event.target as HTMLElement).closest("#desktop-updater")
+    ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
     if (nativeDesktop()) return;
     const action = shortcutSettings.handleKeydown(event);
     if (action) {
@@ -1411,12 +1527,19 @@ async function initializeNativeFiles() {
       notified = false;
     const drain = async () => {
       notified = true;
+      if (desktopUpdater?.updateInProgress) {
+        setTimeout(() => void drain(), 1000);
+        return;
+      }
       if (draining) return;
       draining = true;
       try {
         while (notified) {
           notified = false;
           const files = await invoke<OpenedFile[]>("take_opened_files");
+          // An OS-open request may already be in flight when updating starts.
+          while (desktopUpdater?.updateInProgress)
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           for (const file of files) addDocument(file);
         }
       } catch {
@@ -1453,6 +1576,35 @@ const restoredActiveId = activeId;
 activeId = null;
 applyPrefs();
 activateDocument(restoredActiveId);
+desktopUpdater = createDesktopUpdater({
+  enabled: nativeDesktop(),
+  getLocale: () => prefs.locale,
+  beforeInstall: async () => {
+    if (saving || filePickerActive || closePromptActive) return false;
+    saveDraft();
+    for (const doc of [...tabs]) {
+      if (doc.saving) return false;
+      if (doc.dirty && !(await saveFile(doc.id))) return false;
+    }
+    saveDraft();
+    return tabs.every((doc) => !doc.dirty && !doc.saving);
+  },
+});
+const updateButton = document.createElement("button");
+updateButton.type = "button";
+updateButton.className = "check-updates-button";
+updateButton.dataset.i18n = "checkUpdates";
+updateButton.textContent = t("checkUpdates");
+updateButton.hidden = !nativeDesktop();
+updateButton.addEventListener("click", () => void desktopUpdater?.check(true));
+document.querySelector(".settings-body")!.append(updateButton);
+if (nativeDesktop()) {
+  void import("@tauri-apps/api/window").then(({ getCurrentWindow }) =>
+    getCurrentWindow().onCloseRequested((event) => {
+      if (desktopUpdater?.updateInProgress) event.preventDefault();
+    }),
+  );
+}
 if (isAndroidApp()) {
   watchAndroidOpenedFiles(
     (file) => {
@@ -1477,6 +1629,7 @@ if (isNative()) {
   void initializeNativeFiles();
 }
 async function performAction(action: string) {
+  if (document.querySelector("#desktop-updater[open]")) return;
   if (action === "toggle-mode") {
     if (current()) {
       prefs.mode = prefs.mode === "preview" ? "editor" : "preview";

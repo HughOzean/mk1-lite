@@ -15,6 +15,9 @@ if ! command -v cargo >/dev/null 2>&1; then
   exit 1
 fi
 rustup target add x86_64-apple-darwin
+source scripts/load-updater-signing.sh
 npm run tauri -- build --target x86_64-apple-darwin --bundles app --ci \
   --config '{"bundle":{"macOS":{"signingIdentity":"-","minimumSystemVersion":"11.0"}}}'
 node scripts/package-macos-dmg.mjs x64
+
+node scripts/stage-updater-artifact.mjs darwin-x86_64

@@ -1632,3 +1632,111 @@ body {
   overscroll-behavior: contain;
   white-space: pre;
 }
+
+/* Desktop workspace controls. */
+.new-document-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42px;
+  align-self: stretch;
+  color: var(--accent);
+  border-left: 1px solid var(--border);
+  background: var(--panel);
+}
+.new-document-tab:hover {
+  background: #66cc6618;
+}
+.new-document-tab svg {
+  width: 17px;
+  height: 17px;
+}
+.format-tools {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.format-tools > button,
+.format-tools > select,
+.format-tools > .divider {
+  flex-shrink: 0;
+}
+.editor-zoom {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.editor-zoom .icon-button {
+  width: 28px;
+  height: 30px;
+}
+.editor-zoom output {
+  min-width: 32px;
+  text-align: center;
+  color: var(--muted);
+  font: 10px var(--font-mono);
+}
+.outline-row {
+  display: flex;
+  align-items: center;
+  padding-left: calc(var(--depth) * 12px);
+  min-width: 0;
+}
+.outline-row .outline-toggle {
+  flex: 0 0 20px;
+  width: 20px;
+  margin: 0;
+  padding: 2px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.outline-toggle svg {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.15s;
+}
+.outline-toggle[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+.outline-leaf {
+  flex: 0 0 20px;
+}
+.outline-row .outline-heading {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 4px;
+  width: auto;
+}
+.outline-heading > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.outline-toggle:hover {
+  color: var(--accent);
+}
+html[data-android-app] .editor-zoom {
+  display: none;
+}
+
+.check-updates-button {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 10px 15px;
+  border: 1px solid #66cc6655;
+  border-radius: 5px;
+  background: #66cc6612;
+  color: var(--accent);
+}
+.check-updates-button:hover {
+  background: #66cc6620;
+}

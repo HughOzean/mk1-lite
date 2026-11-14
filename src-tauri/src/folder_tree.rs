@@ -6,9 +6,48 @@ use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
+#[cfg(desktop)]
+use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FsExt;
 
 const MAX_DIRECTORY_ENTRIES: usize = 5000;
+
+// Only a native user selection can add an arbitrary folder to the tree's roots.
+// No broad filesystem read/write scope is added: opening a Markdown file still
+// validates root containment and grants write permission to that exact file only.
+#[tauri::command]
+pub(crate) async fn choose_markdown_directory(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, MarkdownDirectories>,
+) -> Result<Option<String>, String> {
+    #[cfg(desktop)]
+    {
+        let selected = tauri::async_runtime::spawn_blocking(move || {
+            app.dialog().file().blocking_pick_folder()
+        })
+        .await
+        .map_err(|_| "open-failed")?;
+        let Some(selected) = selected else {
+            return Ok(None);
+        };
+        let root = selected.into_path().map_err(|_| "invalid-directory")?;
+        let root = root.canonicalize().map_err(|_| "invalid-directory")?;
+        if !root.is_dir() {
+            return Err("invalid-directory".into());
+        }
+        state
+            .0
+            .lock()
+            .map_err(|_| "open-failed")?
+            .insert(root.clone());
+        Ok(Some(root.to_string_lossy().into_owned()))
+    }
+    #[cfg(not(desktop))]
+    {
+        let _ = (app, state);
+        Err("unsupported".into())
+    }
+}
 
 #[derive(Default)]
 pub(crate) struct MarkdownDirectories(Mutex<HashSet<PathBuf>>);

@@ -14,7 +14,10 @@ if ! command -v cargo >/dev/null 2>&1; then
   echo "Rust is required: install the aarch64-apple-darwin toolchain first."
   exit 1
 fi
+source scripts/load-updater-signing.sh
 npm run tauri -- build --target aarch64-apple-darwin --bundles app --ci \
   --config '{"bundle":{"macOS":{"signingIdentity":"-","minimumSystemVersion":"11.0"}}}'
 
 node scripts/package-macos-dmg.mjs
+
+node scripts/stage-updater-artifact.mjs darwin-aarch64

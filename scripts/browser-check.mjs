@@ -74,8 +74,9 @@ try {
         '#app [data-action="new"],#app [data-action="open"],#app [data-action="save"]',
       )
       .count(),
-    0,
+    1,
   );
+  await expect(page.locator(".new-document-tab")).toBeVisible();
   await expect(page.locator(".component-bar button")).toHaveCount(4);
   await page.locator('[data-action="cheatsheet"]').click();
   await expect(page.locator("#markdown-cheatsheet")).toBeVisible();
@@ -127,7 +128,7 @@ try {
   await expect(page.locator("#outline-panel")).toBeVisible();
   await page.locator("[data-tab]").filter({ hasText: "Alpha.md" }).click();
   await expect(page).toHaveTitle("Alpha.md");
-  await expect(page.locator(".outline button")).toHaveCount(2);
+  await expect(page.locator(".outline [data-heading]")).toHaveCount(2);
   await page.locator('[data-side="files"]').click();
   await page.locator(".tree-choose").click();
   await expect(page.locator(".tree-row")).toHaveCount(2);
@@ -139,12 +140,16 @@ try {
   await page.keyboard.press("Meta+End");
   await page.keyboard.type("\nretained draft");
   await expect(page.locator("#preview")).toContainText("retained draft");
-  await page.locator('[data-action="fold"]').click();
+  await page
+    .locator(".cm-foldGutter .cm-gutterElement")
+    .filter({ hasText: "⌄" })
+    .first()
+    .click();
   assert.ok((await page.locator(".cm-foldPlaceholder").count()) > 0);
   await page.locator("[data-tab]").filter({ hasText: "Beta.md" }).click();
   await page.locator("[data-tab]").filter({ hasText: "Alpha.md" }).click();
   assert.ok((await page.locator(".cm-foldPlaceholder").count()) > 0);
-  await page.locator('[data-action="unfold"]').click();
+  await page.locator(".cm-foldPlaceholder").first().click();
   await expect(page.locator("#preview")).toContainText("retained draft");
   await page.locator(".cm-content").click();
   await page.keyboard.press("Meta+z");

@@ -77,6 +77,7 @@ const keys = [
 type BaseKey = (typeof keys)[number];
 export type Key =
   | BaseKey
+  | keyof typeof desktopMessages.en
   | keyof typeof displayMessages.en
   | keyof typeof associationMessages.en
   | keyof typeof workspaceMessages.en
@@ -1094,7 +1095,89 @@ const displayMessages = {
     squareCode: "Квадратные блоки кода",
   },
 } as const;
+const desktopMessages = {
+  en: {
+    treeOpenFolder: "Open folder",
+    orderedList: "Ordered list",
+    strike: "Strikethrough",
+    inlineCode: "Inline code",
+    rule: "Horizontal rule",
+    zoomIn: "Increase editor font size",
+    zoomOut: "Decrease editor font size",
+    editorFontSize: "Editor font size",
+    outlineCollapse: "Collapse outline",
+    outlineExpand: "Expand outline",
+    checkUpdates: "Check for updates",
+  },
+  zh: {
+    treeOpenFolder: "打开文件夹",
+    orderedList: "有序列表",
+    strike: "删除线",
+    inlineCode: "行内代码",
+    rule: "分割线",
+    zoomIn: "放大编辑字号",
+    zoomOut: "缩小编辑字号",
+    editorFontSize: "编辑字号",
+    outlineCollapse: "折叠大纲",
+    outlineExpand: "展开大纲",
+    checkUpdates: "检查更新",
+  },
+  pt: {
+    treeOpenFolder: "Abrir pasta",
+    orderedList: "Lista numerada",
+    strike: "Tachado",
+    inlineCode: "Código em linha",
+    rule: "Linha horizontal",
+    zoomIn: "Aumentar fonte do editor",
+    zoomOut: "Diminuir fonte do editor",
+    editorFontSize: "Fonte do editor",
+    outlineCollapse: "Recolher estrutura",
+    outlineExpand: "Expandir estrutura",
+    checkUpdates: "Buscar atualizações",
+  },
+  fr: {
+    treeOpenFolder: "Ouvrir un dossier",
+    orderedList: "Liste numérotée",
+    strike: "Barré",
+    inlineCode: "Code en ligne",
+    rule: "Ligne horizontale",
+    zoomIn: "Agrandir la police de l’éditeur",
+    zoomOut: "Réduire la police de l’éditeur",
+    editorFontSize: "Police de l’éditeur",
+    outlineCollapse: "Replier le plan",
+    outlineExpand: "Déplier le plan",
+    checkUpdates: "Rechercher des mises à jour",
+  },
+  de: {
+    treeOpenFolder: "Ordner öffnen",
+    orderedList: "Nummerierte Liste",
+    strike: "Durchgestrichen",
+    inlineCode: "Inline-Code",
+    rule: "Trennlinie",
+    zoomIn: "Editorschrift vergrößern",
+    zoomOut: "Editorschrift verkleinern",
+    editorFontSize: "Editorschriftgröße",
+    outlineCollapse: "Gliederung einklappen",
+    outlineExpand: "Gliederung ausklappen",
+    checkUpdates: "Nach Updates suchen",
+  },
+  ru: {
+    treeOpenFolder: "Открыть папку",
+    orderedList: "Нумерованный список",
+    strike: "Зачёркнутый",
+    inlineCode: "Код в строке",
+    rule: "Горизонтальная линия",
+    zoomIn: "Увеличить шрифт редактора",
+    zoomOut: "Уменьшить шрифт редактора",
+    editorFontSize: "Шрифт редактора",
+    outlineCollapse: "Свернуть оглавление",
+    outlineExpand: "Развернуть оглавление",
+    checkUpdates: "Проверить обновления",
+  },
+} as const;
 export function translate(locale: Locale, key: Key): string {
+  if (key in desktopMessages.en)
+    return desktopMessages[locale][key as keyof typeof desktopMessages.en];
   if (key in displayMessages.en)
     return displayMessages[locale][key as keyof typeof displayMessages.en];
   if (key in interactionMessages.en)

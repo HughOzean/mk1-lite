@@ -85,6 +85,7 @@ export function createFileTree(options: {
   const directoryRoots = new WeakMap<DirectoryHandle, RootState>();
   let doc: TreeDocument | null = null;
   let root: RootState | null = null;
+  let selectedRoot: RootState | null = null;
   let activeKey = "";
   let generation = 0;
   let loadingDocument = false;
@@ -142,6 +143,22 @@ export function createFileTree(options: {
   }
 
   function render() {
+    renderContent();
+    const footer = document.createElement("div");
+    footer.className = "tree-footer";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tree-open-folder";
+    button.innerHTML = folderIcon;
+    const label = document.createElement("span");
+    label.textContent = t("treeOpenFolder");
+    button.append(label);
+    button.disabled = picking || (!native() && !picker());
+    button.addEventListener("click", () => void openFolder());
+    footer.append(button);
+    container.append(footer);
+  }
+  function renderContent() {
     const oldList = container.querySelector<HTMLElement>(".tree-list");
     const scroll = oldList?.scrollTop || 0;
     const focused = container.contains(document.activeElement)
@@ -149,7 +166,7 @@ export function createFileTree(options: {
       : undefined;
     const rows = new Map<string, HTMLButtonElement>();
     container.replaceChildren();
-    if (!doc) {
+    if (!doc && !root) {
       renderMessage("treeEmpty");
       return;
     }
@@ -162,13 +179,13 @@ export function createFileTree(options: {
         messageKey ||
           (native()
             ? "treeError"
-            : !doc.file
+            : !doc?.file
               ? "treeRestoredNoFile"
               : !picker()
                 ? "treeNoDirectoryPicker"
                 : "treeNeedsPermission"),
       );
-      if (!native() && doc.file && picker()) {
+      if (!native() && doc?.file && picker()) {
         const button = document.createElement("button");
         button.className = "tree-choose";
         button.textContent = t("treeChooseFolder");
@@ -245,6 +262,7 @@ export function createFileTree(options: {
           !entry.isDirectory &&
           (entry.key === activeKey ||
             (!!state.nativePath &&
+              !selectedRoot &&
               key === state.rootKey &&
               entry.name === doc?.name));
         row.classList.toggle("active", active);
@@ -434,10 +452,14 @@ export function createFileTree(options: {
           throw new Error("Missing file handle");
         const file = await entry.file.getFile();
         const text = await file.text();
-        const containingRoot = browserRoot(entry.parentDirectory);
+        const containingRoot =
+          selectedRoot === state ? state : browserRoot(entry.parentDirectory);
         fileBindings.set(file, {
           root: containingRoot,
-          key: `${containingRoot.rootKey}/${file.name}`,
+          key:
+            selectedRoot === state
+              ? entry.key
+              : `${containingRoot.rootKey}/${file.name}`,
         });
         result = {
           path: null,
@@ -451,6 +473,48 @@ export function createFileTree(options: {
       onOpenFile(result);
     } catch {
       if (token === generation) notifyError();
+    }
+  }
+  async function openFolder() {
+    if (picking) return;
+    picking = true;
+    const token = generation;
+    render();
+    try {
+      let state: RootState;
+      if (native()) {
+        const path = await invoke<string | null>(
+          "choose_markdown_directory",
+          {},
+        );
+        if (!path || token !== generation) return;
+        const id = `native:${path}`;
+        state =
+          roots.get(id) ||
+          makeRoot(id, basename(path), path, { nativePath: path });
+        roots.set(id, state);
+      } else {
+        const select = picker();
+        if (!select) return;
+        const directory = await select.call(window, { mode: "read" });
+        if (token !== generation) return;
+        state = browserRoot(directory);
+      }
+      selectedRoot = state;
+      root = state;
+      activeKey = doc?.path || "";
+      messageKey = null;
+      loadingDocument = false;
+      await loadChildren(state, state.rootKey, state.directory);
+    } catch (error) {
+      if (
+        token === generation &&
+        (error as { name?: string })?.name !== "AbortError"
+      )
+        notifyError();
+    } finally {
+      picking = false;
+      render();
     }
   }
   async function chooseFolder() {
@@ -512,6 +576,14 @@ export function createFileTree(options: {
     activeKey = "";
     messageKey = null;
     loadingDocument = false;
+    if (selectedRoot) {
+      root = selectedRoot;
+      const binding = next?.file && fileBindings.get(next.file);
+      activeKey = next?.path || (binding?.root === root ? binding.key : "");
+      render();
+      void loadChildren(root, root.rootKey, root.directory);
+      return;
+    }
     if (!next) {
       render();
       return;

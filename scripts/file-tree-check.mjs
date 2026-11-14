@@ -140,6 +140,68 @@ try {
   assert.deepEqual(errors, []);
   await page.close();
 
+  const workspace = await pageFor(() => {
+    window.folderSelection = "/workspace";
+    window.__TAURI_INTERNALS__ = {
+      invoke: async (command, args) => {
+        if (command === "choose_markdown_directory")
+          return window.folderSelection;
+        if (command === "list_markdown_directory") {
+          return args.path === "/workspace"
+            ? [{ name: "sub", path: "/workspace/sub", isDirectory: true }]
+            : [
+                {
+                  name: "nested.md",
+                  path: "/workspace/sub/nested.md",
+                  isDirectory: false,
+                },
+              ];
+        }
+        if (command === "read_markdown_tree_file")
+          return { path: args.path, name: "nested.md", text: "# nested" };
+        throw new Error("Unexpected command: " + command);
+      },
+    };
+  });
+  await expect(workspace.page.locator(".tree-open-folder")).toBeVisible();
+  await workspace.page.locator(".tree-open-folder").click();
+  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
+    "workspace",
+  );
+  await workspace.page
+    .getByRole("treeitem", { name: "sub", exact: true })
+    .click();
+  await workspace.page
+    .getByRole("treeitem", { name: "nested.md", exact: true })
+    .click();
+  await workspace.page.waitForFunction(() => window.testOpen.length === 1);
+  await workspace.page.evaluate(() =>
+    window.tree.setDocument({
+      id: "nested",
+      name: "nested.md",
+      path: "/workspace/sub/nested.md",
+    }),
+  );
+  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
+    "workspace",
+  );
+  await expect(workspace.page.locator(".tree-row.active")).toHaveText(
+    "nested.md",
+  );
+  await workspace.page.evaluate(() => window.tree.setDocument(null));
+  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
+    "workspace",
+  );
+  await workspace.page.evaluate(() => {
+    window.folderSelection = null;
+  });
+  await workspace.page.locator(".tree-open-folder").click();
+  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
+    "workspace",
+  );
+  assert.deepEqual(workspace.errors, []);
+  await workspace.page.close();
+
   const web = await pageFor(() => {
     const file = (name, text) => ({
       kind: "file",

@@ -7,9 +7,11 @@
 ## 功能
 
 - 中文、英文、葡语、法语、德语、俄语界面。
-- 多标签编辑，各自保留内容、撤销、光标、折叠与滚动状态；支持关闭全部或右侧标签。
-- 当前 Markdown 所在目录的文件树与标题大纲切换；子目录懒加载。
-- 实时预览，支持 H1–H5、表格、引用、列表、代码和删除线。
+- 多标签编辑，各自保留内容、撤销、光标、折叠与滚动状态；右侧加号新建文档，支持关闭全部或右侧标签。
+- 文件栏底部可打开文件夹，展开子目录并直接打开 Markdown；标题大纲支持分支及全部折叠/展开。
+- 实时预览；工具栏支持 H1–H5、表格、引用、无序/有序列表、代码块、行内代码、删除线和分割线。
+- 工具栏右侧可独立缩放编辑字号（10–28px），不影响预览字号。
+- 桌面自动检查更新，确认后下载、保存文档、安装并重启；设置内可手动检查更新。
 - 独立搜索替换浮窗：正则、大小写、全字匹配与结果高亮。
 - 编辑/预览切换、字体/字号/行高/宽度、主题、行号和换行设置。
 - 可自定义模式切换和前后标签快捷键；内置 Markdown语法表。
@@ -19,11 +21,12 @@
 
 ## 下载与平台状态
 
-当前分发版本：**macOS / Windows 0.2.6，Android 0.2.8 测试版**。
+当前桌面源码版本：**0.3.0**；已公开的各平台版本以 [下载页](https://hughozean.github.io/mk1-lite/#download) 为准，Android 保持 0.2.8 测试版。
 
 | 平台 | 分发方式 | 验证边界 |
 | --- | --- | --- |
 | macOS Apple Silicon | Releases 中的 `.dmg` | macOS 11+，本地构建、ARM64、签名及镜像检查通过；临时签名，未做 Apple 公证 |
+| macOS Intel | Releases 中的 `.dmg` | macOS 11+，x86_64 交叉构建、签名及镜像检查；尚需 Intel 真机验收 |
 | Windows x64 | GitHub Actions 生成 NSIS `.exe` | 构建和 PE 结构检查；交互安装及功能仍需 Windows 实机验收，无代码签名证书 |
 | Android | Releases 中的 `.apk` 调试测试版 | Android 8.0+；编译、签名、资源及浏览器交互检查通过，系统文件提供器、异形屏与输入法仍需真机验收 |
 | Web | `npm run dev` | 文件保存通过下载导出；父目录访问需支持目录选择并手动授权 |
@@ -52,6 +55,8 @@ npm run test:cheatsheet
 npm run test:menu
 npm run test:shortcuts
 npm run test:tabs
+npm run test:desktop
+npm run test:updater
 npm run test:android
 npm run test:android:layout
 npm run test:android:open
@@ -82,6 +87,8 @@ Windows：在 GitHub Actions 手动运行 **Build Windows installer**，选择�
 Android：配置 JDK 17、Android SDK Platform 35 与 Build Tools 35.0.0，执行 `npm run android:build`。脚本可使用本地 `.build-tools/` 工具链或系统环境，Gradle wrapper 已锁定版本；输出位于 `release/android/`，同时验证签名并生成校验值。详见 [Android 开发与验证说明](docs/ANDROID.md)。
 
 图标源在 `public/app-icon.svg`，`npm run icons` 重新生成平台资源。macOS ICNS 使用1024透明画布和824主体，Windows 使用全幅图标。安卓独立矢量源在 `android/artwork/launcher-foreground.svg`，`npm run icons:android` 生成文字缩小并预留安全区的图标。
+
+自动更新密钥、签名产物和三端发布步骤见 [自动更新说明](docs/AUTO-UPDATES.md)。已发布的旧版需要先手动安装一次 0.3.0 或更新版本。
 
 ## GitHub Pages 下载页
 

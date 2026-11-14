@@ -342,6 +342,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             take_opened_files,
             set_default_markdown_app,
+            folder_tree::choose_markdown_directory,
             folder_tree::authorize_directory_for_file,
             folder_tree::list_markdown_directory,
             folder_tree::read_markdown_tree_file,
@@ -349,6 +350,8 @@ pub fn run() {
         ]);
     #[cfg(desktop)]
     let builder = builder
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             app_menu::install(app.handle(), "zh", false)?;
             #[cfg(target_os = "windows")]

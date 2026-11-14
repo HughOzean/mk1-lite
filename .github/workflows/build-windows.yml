@@ -8,7 +8,7 @@ on:
         description: Existing source tag whose version matches package.json
         type: string
         required: true
-        default: v0.2.6
+        default: v0.3.0
       upload_to_release:
         description: Attach installer to the existing draft release (never publishes it)
         type: boolean
@@ -34,6 +34,8 @@ jobs:
     env:
       RELEASE_TAG: ${{ inputs.tag }}
       CARGO_TERM_COLOR: always
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - name: Validate requested tag
         run: |
@@ -80,6 +82,12 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Require updater signing key
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw 'Configure the repository secret TAURI_SIGNING_PRIVATE_KEY before building desktop releases.'
+          }
+
       - name: Build native Windows NSIS installer
         run: npm run tauri -- build --target x86_64-pc-windows-msvc --bundles nsis --ci
 
@@ -104,12 +112,15 @@ jobs:
           "- SHA-256: $hash" >> $env:GITHUB_STEP_SUMMARY
           '- Build verified as AMD64; interactive installation still requires Windows testing.' >> $env:GITHUB_STEP_SUMMARY
 
+      - name: Stage signed updater artifacts
+        run: node scripts/stage-updater-artifact.mjs windows-x86_64
+
       - name: Preserve build artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: Mk.1-Lite-${{ steps.version.outputs.version }}-windows-x64
           path: |
-            release/windows/*.exe
+            release/updater/windows-x86_64/*
             release/windows/windows-SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
@@ -123,6 +134,7 @@ jobs:
           $draft = gh release view $env:RELEASE_TAG --json isDraft --jq '.isDraft'
           if ($LASTEXITCODE -ne 0) { throw 'Create the draft release before attaching files.' }
           if ($draft.Trim() -ne 'true') { throw 'Refusing to modify a published release. Use an existing draft release.' }
-          $files = @(Get-ChildItem release/windows -File | ForEach-Object { $_.FullName })
+          $files = @(Get-ChildItem release/updater/windows-x86_64 -File | ForEach-Object { $_.FullName })
+          $files += (Resolve-Path release/windows/windows-SHA256SUMS.txt).Path
           gh release upload $env:RELEASE_TAG @files --clobber
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
