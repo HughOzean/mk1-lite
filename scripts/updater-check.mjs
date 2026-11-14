@@ -1,3 +1,15 @@
+import { readFile } from "node:fs/promises";
+const desktopCapabilities = JSON.parse(
+  await readFile(
+    new URL("../src-tauri/capabilities/default.json", import.meta.url),
+    "utf8",
+  ),
+);
+// Tauri's onCloseRequested calls Window.destroy after the handler permits close.
+if (!desktopCapabilities.permissions.includes("core:window:allow-destroy"))
+  throw new Error(
+    "The native close-request listener requires core:window:allow-destroy.",
+  );
 import { chromium, expect } from "@playwright/test";
 import assert from "node:assert/strict";
 

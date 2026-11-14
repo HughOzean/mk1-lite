@@ -1,6 +1,6 @@
 [package]
 name = "mark1light"
-version = "0.3.0"
+version = "0.3.1"
 description = "Lightweight Markdown editor"
 authors = ["Mark1Light"]
 edition = "2021"

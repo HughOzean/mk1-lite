@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Mk.1 Lite",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "identifier": "com.mark1light.app",
   "build": {
     "beforeDevCommand": "npm run dev -- --port 1420 --strictPort",

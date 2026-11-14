@@ -8,7 +8,7 @@ on:
         description: Existing source tag whose version matches package.json
         type: string
         required: true
-        default: v0.3.0
+        default: v0.3.1
       upload_to_release:
         description: Attach installer to the existing draft release (never publishes it)
         type: boolean

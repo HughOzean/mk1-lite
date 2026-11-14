@@ -16,7 +16,8 @@
     "dialog:allow-message",
     "core:window:allow-set-title",
     "updater:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "core:window:allow-destroy"
   ],
   "platforms": [
     "macOS",

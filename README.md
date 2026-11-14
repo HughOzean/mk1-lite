@@ -21,7 +21,7 @@
 
 ## 下载与平台状态
 
-当前桌面源码版本：**0.3.0**；已公开的各平台版本以 [下载页](https://hughozean.github.io/mk1-lite/#download) 为准，Android 保持 0.2.8 测试版。
+当前桌面源码版本：**0.3.1**；已公开的各平台版本以 [下载页](https://hughozean.github.io/mk1-lite/#download) 为准，Android 保持 0.2.8 测试版。
 
 | 平台 | 分发方式 | 验证边界 |
 | --- | --- | --- |
