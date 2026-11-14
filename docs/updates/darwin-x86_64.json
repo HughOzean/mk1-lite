@@ -1,0 +1,11 @@
+{
+  "version": "0.3.0",
+  "notes": "A new desktop release of Mk.1 Lite is available.",
+  "pub_date": "2026-11-14T05:29:30.155Z",
+  "platforms": {
+    "darwin-x86_64": {
+      "url": "https://github.com/HughOzean/mk1-lite/releases/download/v0.3.0/Mk.1-Lite_0.3.0_macos-x64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTeUVBblkxdXlpZ25wMktrY1V5R3QrUkFyUUlZdWVLR1FYVzJWRDhvTGk3aGUzVXpBWGxrQnhJQnF6RVFZTGh0clBaVlZzeXNtRTVTUmI4alJCcGxCemxYb1ZYVC9hOEFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjM0MTY0CWZpbGU6TWsuMSBMaXRlLmFwcC50YXIuZ3oJdmVyc2lvbjowLjMuMApxaEFFdkYrWTk4Vm1hU1A3V0hodXJFYityTlJJWngvS2wrdEhVelVPcjA2RnBXcVBoeUdmRDQ0UGVFRmYySmc4Vm51bnNjZ2doaVZMWEFqY203QlREQT09Cg=="
+    }
+  }
+}

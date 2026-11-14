@@ -1,23 +1,23 @@
 {
-  "version": "0.2.9",
+  "version": "0.3.0",
   "repository": "https://github.com/HughOzean/mk1-lite",
-  "tag": "v0.2.9",
+  "tag": "v0.3.0",
   "platforms": {
     "macos": {
       "available": true,
-      "asset": "Mk.1-Lite_0.2.6_macos-arm64.dmg",
-      "bytes": 3770219,
-      "sha256": "05f45949791690027bd2fff7b310d251c45e9a851c2236cf32be5da68deb7341",
-      "version": "0.2.6",
-      "tag": "v0.2.6"
+      "version": "0.3.0",
+      "tag": "v0.3.0",
+      "asset": "Mk.1-Lite_0.3.0_macos-arm64.dmg",
+      "bytes": 5316002,
+      "sha256": "f6f644b0f2c75d0363898279527b2c31bc6d6aaacdf4fce663358deea0ec1d8e"
     },
     "windows": {
       "available": true,
-      "asset": "Mk.1-Lite_0.2.6_windows-x64-setup.exe",
-      "bytes": 2672623,
-      "sha256": "e0ac5b6f402f5cb9783ba75647e97a4a708ba50eb96fdf2810ce27d8db9e3cdb",
-      "version": "0.2.6",
-      "tag": "v0.2.6"
+      "version": "0.3.0",
+      "tag": "v0.3.0",
+      "asset": "Mk.1-Lite_0.3.0_windows-x64-setup.exe",
+      "bytes": 3789567,
+      "sha256": "034192316cae9572c50a0eb6a25e0144c05a2c67d09470fd849e4a2d01dd18c5"
     },
     "android": {
       "available": true,
@@ -29,11 +29,11 @@
     },
     "macos-intel": {
       "available": true,
-      "version": "0.2.9",
-      "tag": "v0.2.9",
-      "asset": "Mk.1-Lite_0.2.9_macos-x64.dmg",
-      "bytes": 3976832,
-      "sha256": "5b833bb3ec2ddf7eb44f21af6533ed32c105f45dd203d6d1be336104380f7387"
+      "version": "0.3.0",
+      "tag": "v0.3.0",
+      "asset": "Mk.1-Lite_0.3.0_macos-x64.dmg",
+      "bytes": 5590871,
+      "sha256": "f163c959570be8120d3c69ddb53c4c660f15e4197b6f88cd7c87dcd8c7fbb0fa"
     }
   }
 }

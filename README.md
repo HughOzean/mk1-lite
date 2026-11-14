@@ -92,7 +92,7 @@ Android：配置 JDK 17、Android SDK Platform 35 与 Build Tools 35.0.0，执�
 
 ## GitHub Pages 下载页
 
-静态页面位于 `docs/`，版本和下载状态由 `docs/releases.json` 管理。只有真实公开的 Release 资产才启用下载按钮，校验值与安装包对应。各平台可独立设置版本与标签，安卓测试版使用 `android-v0.2.8`，Intel macOS 测试版使用 `v0.2.9`，ARM64 与 Windows 下载继续指向 `v0.2.6`。
+静态页面位于 `docs/`，版本和下载状态由 `docs/releases.json` 管理。只有真实公开的 Release 资产才启用下载按钮，校验值与安装包对应。各平台可独立设置版本与标签，安卓测试版使用 `android-v0.2.8`，macOS ARM64、Intel 与 Windows 桌面测试版使用 `v0.3.0`。
 
 本地预览下载页：`npm run site:dev`，打开 `http://127.0.0.1:5180/`。启动后可用 `npm run site:check` 验证下载状态、语言和响应式布局。
 
@@ -102,6 +102,6 @@ Android：配置 JDK 17、Android SDK Platform 35 与 Build Tools 35.0.0，执�
 
 编辑与渲染在本机完成，无云同步。草稿使用当前应用/浏览器的 localStorage，受容量限制，不能替代文件备份。恢复文本不会恢复文件系统权限，需重新打开原文件或另存为。
 
-文件树限制在已授权文件的父目录，阻止目录越界与符号链接逃逸。原生树/Finder 读取 UTF-8（含 BOM）Markdown，最大20 MiB；仅授予具体打开文件的写入权限。原始 HTML 默认禁用，危险链接协议被阻止；外链图片可能向图片来源发送网络请求。
+文件树限制在用户选择的文件夹或已授权文件的父目录，阻止目录越界与符号链接逃逸。原生树/Finder 读取 UTF-8（含 BOM）Markdown，最大20 MiB；仅授予具体打开文件的写入权限。原始 HTML 默认禁用，危险链接协议被阻止；外链图片可能向图片来源发送网络请求。
 
 应用内部标识沿用旧名称，以兼容已有草稿、偏好和文件关联。原生冷启动和超大文档性能尚未做基准测试。
