@@ -15,10 +15,21 @@ try {
   const response = await page.request.get(`${base}/releases.json`);
   assert.equal(response.status(), 200);
   const release = await response.json();
+  async function selectArchitecture(target, platform) {
+    await target.locator("#mac-architecture").click();
+    await target.locator(`[data-architecture="${platform}"]`).click();
+    await expect(target.locator("#mac-architecture")).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    await expect(
+      target.locator(`[data-architecture="${platform}"]`),
+    ).toHaveAttribute("aria-selected", "true");
+  }
   async function checkCards(target, manifest) {
     for (const platform of ["macos", "macos-intel", "windows", "android"]) {
       if (platform === "macos" || platform === "macos-intel")
-        await target.locator("#mac-architecture").selectOption(platform);
+        await selectArchitecture(target, platform);
       const card = target.locator(
           `[data-platform="${platform === "macos-intel" ? "macos" : platform}"]`,
         ),
@@ -49,11 +60,32 @@ try {
     }
   }
   await checkCards(page, release);
-  await page.locator("#mac-architecture").selectOption("macos");
+  const trigger = page.locator("#mac-architecture");
+  await trigger.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator('[data-architecture="macos-intel"]')).toBeFocused();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Enter");
+  await expect(trigger).toBeFocused();
   await expect(
     page.locator('[data-platform="macos"] .download-button'),
   ).toContainText("ARM64");
-  await page.locator("#mac-architecture").selectOption("macos-intel");
+  await trigger.click();
+  await page.keyboard.press("Escape");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await trigger.click();
+  await page.locator("#download-title").click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await selectArchitecture(page, "macos-intel");
+  await trigger.click();
+  await page.screenshot({ path: "artifacts/architecture-menu-desktop.png" });
+  await page.keyboard.press("Tab");
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await selectArchitecture(page, "macos");
+  await expect(
+    page.locator('[data-platform="macos"] .download-button'),
+  ).toContainText("ARM64");
+  await selectArchitecture(page, "macos-intel");
   await expect(page.locator('[data-i18n="androidMinimum"]')).toContainText(
     "Android 8.0",
   );
@@ -108,9 +140,8 @@ try {
     await checkCards(mobile, release);
     if (width === 390) {
       await mobile.screenshot({ path: "artifacts/download-page-mobile.png" });
-      await mobile
-        .locator('[data-platform="macos"]')
-        .scrollIntoViewIfNeeded();
+      await mobile.locator('[data-platform="macos"]').scrollIntoViewIfNeeded();
+      await mobile.locator("#mac-architecture").click();
       await mobile.screenshot({
         path: "artifacts/download-page-mobile-downloads.png",
       });

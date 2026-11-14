@@ -202,6 +202,7 @@ strings.zh.faqPlatformsBody =
   "提供 macOS Apple Silicon 和 Intel、Windows x64 与 Android 8.0+ 版本，各平台版本和验证状态见下载区。Mac 尚未进行 Apple 公证；安卓版为调试签名测试版。";
 strings.en.faqPlatformsBody =
   "Builds are available for macOS Apple Silicon and Intel, Windows x64, and Android 8.0+. See each download card for its version and verification status. The Mac build is not notarized; Android is a debug-signed test build.";
+let macPlatform = "macos";
 let locale = "zh";
 try {
   if (localStorage.getItem("mk1lite-site-language") === "en") locale = "en";
@@ -239,7 +240,7 @@ function render() {
   document.getElementById("preview-mode").textContent = t(
     previewOnly ? "editor" : "preview",
   );
-  const macPlatform = document.getElementById("mac-architecture").value;
+
   const macCard = document.querySelector('[data-platform="macos"]');
   macCard.querySelector("[data-mac-architecture]").textContent =
     macPlatform === "macos-intel" ? "Intel · x86_64" : "Apple Silicon · ARM64";
@@ -309,7 +310,71 @@ function render() {
           : "releaseReady",
   );
 }
-document.getElementById("mac-architecture").addEventListener("change", render);
+const architectureTrigger = document.getElementById("mac-architecture");
+const architectureMenu = document.getElementById("mac-architecture-options");
+const architectureOptions = [
+  ...architectureMenu.querySelectorAll("[data-architecture]"),
+];
+function closeArchitectureMenu(restoreFocus = false) {
+  architectureMenu.hidden = true;
+  architectureTrigger.setAttribute("aria-expanded", "false");
+  if (restoreFocus) architectureTrigger.focus();
+}
+function openArchitectureMenu() {
+  architectureMenu.hidden = false;
+  architectureTrigger.setAttribute("aria-expanded", "true");
+  architectureOptions
+    .find((option) => option.dataset.architecture === macPlatform)
+    .focus();
+}
+architectureTrigger.addEventListener("click", () => {
+  if (architectureMenu.hidden) openArchitectureMenu();
+  else closeArchitectureMenu();
+});
+architectureTrigger.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    openArchitectureMenu();
+  }
+});
+architectureOptions.forEach((option) =>
+  option.addEventListener("click", () => {
+    macPlatform = option.dataset.architecture;
+    document
+      .getElementById("mac-architecture-value")
+      .replaceChildren(option.firstElementChild.cloneNode(true));
+    architectureOptions.forEach((item) =>
+      item.setAttribute("aria-selected", String(item === option)),
+    );
+    closeArchitectureMenu(true);
+    render();
+  }),
+);
+architectureMenu.addEventListener("keydown", (event) => {
+  const index = architectureOptions.indexOf(document.activeElement);
+  const destinations = {
+    ArrowDown: (index + 1) % architectureOptions.length,
+    ArrowUp:
+      (index - 1 + architectureOptions.length) % architectureOptions.length,
+    Home: 0,
+    End: architectureOptions.length - 1,
+  };
+  if (Object.hasOwn(destinations, event.key)) {
+    event.preventDefault();
+    architectureOptions[destinations[event.key]].focus();
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    closeArchitectureMenu(true);
+  }
+});
+const architecturePicker = architectureTrigger.closest(".architecture-picker");
+document.addEventListener("pointerdown", (event) => {
+  if (!architecturePicker.contains(event.target)) closeArchitectureMenu();
+});
+architecturePicker.addEventListener("focusout", (event) => {
+  if (!architecturePicker.contains(event.relatedTarget))
+    closeArchitectureMenu();
+});
 document.getElementById("language").addEventListener("click", () => {
   locale = locale === "zh" ? "en" : "zh";
   try {
