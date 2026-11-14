@@ -1,6 +1,6 @@
 {
   "name": "mark1light",
-  "version": "0.2.6",
+  "version": "0.2.9",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,6 +12,7 @@
     "test:browser": "node scripts/browser-check.mjs",
     "format": "prettier --write src tests scripts vite.config.ts",
     "build:mac:arm": "LC_ALL=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 LANG=en_US.UTF-8 bash scripts/build-macos-arm.sh",
+    "build:mac:intel": "LC_ALL=en_US.UTF-8 LC_CTYPE=en_US.UTF-8 LANG=en_US.UTF-8 bash scripts/build-macos-intel.sh",
     "test:native-bridge": "node scripts/native-bridge-check.mjs",
     "test:search": "node scripts/search-dialog-check.mjs",
     "test:tree": "node scripts/file-tree-check.mjs",
@@ -21,6 +22,7 @@
     "test:tabs": "node scripts/tab-context-check.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "package:mac:arm": "node scripts/package-macos-dmg.mjs",
+    "package:mac:intel": "node scripts/package-macos-dmg.mjs x64",
     "site:dev": "node scripts/site-preview.mjs --port 5180",
     "site:check": "node scripts/check-download-page.mjs",
     "android:prepare": "npm run build",

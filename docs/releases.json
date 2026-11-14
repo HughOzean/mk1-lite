@@ -1,7 +1,7 @@
 {
-  "version": "0.2.8",
+  "version": "0.2.9",
   "repository": "https://github.com/HughOzean/mk1-lite",
-  "tag": "android-v0.2.8",
+  "tag": "v0.2.9",
   "platforms": {
     "macos": {
       "available": true,
@@ -26,6 +26,14 @@
       "asset": "Mk1-Lite-0.2.8-debug.apk",
       "bytes": 1688007,
       "sha256": "366a99083f2afc82c33350020b85ff56a9f73700481eedb63c994b47de3596df"
+    },
+    "macos-intel": {
+      "available": true,
+      "version": "0.2.9",
+      "tag": "v0.2.9",
+      "asset": "Mk.1-Lite_0.2.9_macos-x64.dmg",
+      "bytes": 3976832,
+      "sha256": "5b833bb3ec2ddf7eb44f21af6533ed32c105f45dd203d6d1be336104380f7387"
     }
   }
 }

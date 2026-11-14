@@ -160,6 +160,8 @@ const strings = {
   },
 };
 Object.assign(strings.zh, {
+  downloadMacIntel: "下载 macOS Intel",
+  macIntelSigning: "临时签名测试版，尚未进行 Apple 公证和 Intel 真机验收。",
   androidMinimum: "Android 8.0 或更新版本",
   androidBuild: "通用 APK · 调试测试版",
   androidSigning:
@@ -175,6 +177,8 @@ Object.assign(strings.zh, {
     "通过系统选择器打开文件，或授权文件夹后仅显示 .md。自动避开异形屏和系统栏，设置可增加顶部留白。部分文件提供器隐藏文件名或标错类型时，请使用应用内“打开”。当前为调试测试版，仍需真机验收。",
 });
 Object.assign(strings.en, {
+  downloadMacIntel: "Download macOS Intel",
+  macIntelSigning: "Ad-hoc signed test build. Not notarized by Apple; Intel device testing is pending.",
   androidMinimum: "Android 8.0 or later",
   androidBuild: "Universal APK · Debug test build",
   androidSigning:
@@ -192,9 +196,9 @@ Object.assign(strings.en, {
     "Open files with the system picker or authorize a folder and filter for .md files. Screen cutouts and system bars are avoided automatically; add extra top spacing in Settings. If a provider hides the filename or reports the wrong type, use Open inside the app. This debug test build still needs real-device acceptance testing.",
 });
 strings.zh.faqPlatformsBody =
-  "提供 macOS Apple Silicon、Windows x64 与 Android 8.0+ 版本，各平台版本和验证状态见下载区。Mac 尚未进行 Apple 公证；安卓版为调试签名测试版。";
+  "提供 macOS Apple Silicon 和 Intel、Windows x64 与 Android 8.0+ 版本，各平台版本和验证状态见下载区。Mac 尚未进行 Apple 公证；安卓版为调试签名测试版。";
 strings.en.faqPlatformsBody =
-  "Builds are available for macOS Apple Silicon, Windows x64, and Android 8.0+. See each download card for its version and verification status. The Mac build is not notarized; Android is a debug-signed test build.";
+  "Builds are available for macOS Apple Silicon and Intel, Windows x64, and Android 8.0+. See each download card for its version and verification status. The Mac build is not notarized; Android is a debug-signed test build.";
 let locale = "zh";
 try {
   if (localStorage.getItem("mk1lite-site-language") === "en") locale = "en";
@@ -232,7 +236,7 @@ function render() {
   document.getElementById("preview-mode").textContent = t(
     previewOnly ? "editor" : "preview",
   );
-  for (const platform of ["macos", "windows", "android"]) {
+  for (const platform of ["macos", "macos-intel", "windows", "android"]) {
     const data = release?.platforms?.[platform] || {};
     const card = document.querySelector(`[data-platform="${platform}"]`);
     const tag = data.tag || release?.tag,
@@ -257,6 +261,7 @@ function render() {
       anchor.querySelector("[data-download-text]").textContent = t(
         {
           macos: "downloadMac",
+          "macos-intel": "downloadMacIntel",
           windows: "downloadWindows",
           android: "downloadAndroid",
         }[platform],
@@ -268,6 +273,7 @@ function render() {
           ? "loading"
           : {
               macos: "pendingMac",
+              "macos-intel": "pendingMac",
               windows: "pendingWindows",
               android: "pendingAndroid",
             }[platform],

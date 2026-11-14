@@ -16,7 +16,7 @@ try {
   assert.equal(response.status(), 200);
   const release = await response.json();
   async function checkCards(target, manifest) {
-    for (const platform of ["macos", "windows", "android"]) {
+    for (const platform of ["macos", "macos-intel", "windows", "android"]) {
       const card = target.locator(`[data-platform="${platform}"]`),
         file = manifest.platforms[platform];
       await expect(card).toBeVisible();
@@ -59,6 +59,12 @@ try {
     await expect(
       page.locator('[data-platform="android"] .download-button'),
     ).toContainText("Download Android APK");
+  await expect(
+    page.locator('[data-platform="macos-intel"] .download-button'),
+  ).toContainText("Download macOS Intel");
+  await expect(page.locator('[data-i18n="macIntelSigning"]')).toContainText(
+    "Intel device testing",
+  );
   await page.locator("#language").click();
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await page.locator("#preview-mode").click();
@@ -106,13 +112,14 @@ try {
   );
   await page.reload();
   await checkCards(page, independent);
+  delete independent.platforms["macos-intel"];
   // Existing manifests without an Android release remain usable and keep its button disabled.
   delete independent.platforms.android;
   await page.reload();
   await checkCards(page, independent);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: three platform cards, independent release tags/versions/checksums, legacy manifest fallback, Android bilingual instructions, 320/390/768px layouts and GitHub Pages subpath.",
+    "PASS: four download cards, independent release tags/versions/checksums, legacy manifest fallback, Android bilingual instructions, 320/390/768px layouts and GitHub Pages subpath.",
   );
 } finally {
   await browser.close();

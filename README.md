@@ -67,6 +67,14 @@ macOS ARM64：
 npm run build:mac:arm
 ```
 
+macOS Intel（x86_64，最低 macOS 11.0）：
+
+```sh
+npm run build:mac:intel
+```
+
+Intel 脚本会安装 `x86_64-apple-darwin` Rust 目标，可在 Apple Silicon Mac 上交叉编译。输出为 `release/Mk.1-Lite_<版本>_macos-x64.dmg`，打包前检查可执行文件架构及应用签名。Intel 真机兼容性需要另行验证。
+
 构建脚本优先使用项目内 `.build-tools/` 的隔离 Rust，也支持 PATH 中的工具链。用独立目录创建只包含当前应用和 Applications 链接的只读 DMG。该命令使用临时签名；正式签名、公证需要另外配置。
 
 Windows：在 GitHub Actions 手动运行 **Build Windows installer**，选择与源码版本一致的标签。工作流构建 x64 程序、检查 PE 架构、生成 SHA-256，并可上传到已存在的草稿 Release。不会自动发布草稿。
@@ -77,7 +85,7 @@ Android：配置 JDK 17、Android SDK Platform 35 与 Build Tools 35.0.0，执�
 
 ## GitHub Pages 下载页
 
-静态页面位于 `docs/`，版本和下载状态由 `docs/releases.json` 管理。只有真实公开的 Release 资产才启用下载按钮，校验值与安装包对应。各平台可独立设置版本与标签，安卓测试版使用 `android-v0.2.8`，桌面下载继续指向 `v0.2.6`。
+静态页面位于 `docs/`，版本和下载状态由 `docs/releases.json` 管理。只有真实公开的 Release 资产才启用下载按钮，校验值与安装包对应。各平台可独立设置版本与标签，安卓测试版使用 `android-v0.2.8`，Intel macOS 测试版使用 `v0.2.9`，ARM64 与 Windows 下载继续指向 `v0.2.6`。
 
 本地预览下载页：`npm run site:dev`，打开 `http://127.0.0.1:5180/`。启动后可用 `npm run site:check` 验证下载状态、语言和响应式布局。
 

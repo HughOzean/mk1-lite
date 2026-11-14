@@ -2,3 +2,6 @@
 
 /* Independent desktop and Android releases. */
 .platform-heading h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.platform-version{font:10px "SFMono-Regular",Consolas,monospace;letter-spacing:0;color:var(--accent);white-space:nowrap}.download-grid,.install-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.download-card{padding:24px}.release-line{flex-wrap:wrap}@media(max-width:1100px){.download-grid,.install-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.download-grid,.install-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Keep four desktop download options balanced; installation steps remain three. */
+@media(min-width:1101px){.download-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
