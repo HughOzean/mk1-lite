@@ -160,6 +160,7 @@ const strings = {
   },
 };
 Object.assign(strings.zh, {
+  macArchitecture: "芯片架构",
   downloadMacIntel: "下载 macOS Intel",
   macIntelSigning: "临时签名测试版，尚未进行 Apple 公证和 Intel 真机验收。",
   androidMinimum: "Android 8.0 或更新版本",
@@ -177,8 +178,10 @@ Object.assign(strings.zh, {
     "通过系统选择器打开文件，或授权文件夹后仅显示 .md。自动避开异形屏和系统栏，设置可增加顶部留白。部分文件提供器隐藏文件名或标错类型时，请使用应用内“打开”。当前为调试测试版，仍需真机验收。",
 });
 Object.assign(strings.en, {
+  macArchitecture: "Chip architecture",
   downloadMacIntel: "Download macOS Intel",
-  macIntelSigning: "Ad-hoc signed test build. Not notarized by Apple; Intel device testing is pending.",
+  macIntelSigning:
+    "Ad-hoc signed test build. Not notarized by Apple; Intel device testing is pending.",
   androidMinimum: "Android 8.0 or later",
   androidBuild: "Universal APK · Debug test build",
   androidSigning:
@@ -236,9 +239,17 @@ function render() {
   document.getElementById("preview-mode").textContent = t(
     previewOnly ? "editor" : "preview",
   );
-  for (const platform of ["macos", "macos-intel", "windows", "android"]) {
+  const macPlatform = document.getElementById("mac-architecture").value;
+  const macCard = document.querySelector('[data-platform="macos"]');
+  macCard.querySelector("[data-mac-architecture]").textContent =
+    macPlatform === "macos-intel" ? "Intel · x86_64" : "Apple Silicon · ARM64";
+  macCard.querySelector(".signing-note").textContent = t(
+    macPlatform === "macos-intel" ? "macIntelSigning" : "macSigning",
+  );
+  for (const cardPlatform of ["macos", "windows", "android"]) {
+    const platform = cardPlatform === "macos" ? macPlatform : cardPlatform;
     const data = release?.platforms?.[platform] || {};
-    const card = document.querySelector(`[data-platform="${platform}"]`);
+    const card = document.querySelector(`[data-platform="${cardPlatform}"]`);
     const tag = data.tag || release?.tag,
       version = data.version || release?.version;
     const validTag = typeof tag === "string" && /^[\w.-]+$/.test(tag);
@@ -298,6 +309,7 @@ function render() {
           : "releaseReady",
   );
 }
+document.getElementById("mac-architecture").addEventListener("change", render);
 document.getElementById("language").addEventListener("click", () => {
   locale = locale === "zh" ? "en" : "zh";
   try {

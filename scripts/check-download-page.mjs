@@ -17,7 +17,11 @@ try {
   const release = await response.json();
   async function checkCards(target, manifest) {
     for (const platform of ["macos", "macos-intel", "windows", "android"]) {
-      const card = target.locator(`[data-platform="${platform}"]`),
+      if (platform === "macos" || platform === "macos-intel")
+        await target.locator("#mac-architecture").selectOption(platform);
+      const card = target.locator(
+          `[data-platform="${platform === "macos-intel" ? "macos" : platform}"]`,
+        ),
         file = manifest.platforms[platform];
       await expect(card).toBeVisible();
       await expect(card.locator("[data-platform-version]")).toHaveText(
@@ -31,13 +35,25 @@ try {
         );
         await expect(card.locator(".checksum code")).toHaveText(file.sha256);
         assert.match(file.sha256, /^[0-9a-f]{64}$/);
+        await expect(card.locator("[data-file-size]")).toHaveText(
+          `${(file.bytes / 1048576).toFixed(1)} MiB`,
+        );
       } else {
         await expect(card.locator(".download-button")).toBeHidden();
         await expect(card.locator(".pending-button")).toBeDisabled();
+        await expect(card.locator(".download-button")).not.toHaveAttribute(
+          "href",
+        );
+        await expect(card.locator(".checksum")).toBeHidden();
       }
     }
   }
   await checkCards(page, release);
+  await page.locator("#mac-architecture").selectOption("macos");
+  await expect(
+    page.locator('[data-platform="macos"] .download-button'),
+  ).toContainText("ARM64");
+  await page.locator("#mac-architecture").selectOption("macos-intel");
   await expect(page.locator('[data-i18n="androidMinimum"]')).toContainText(
     "Android 8.0",
   );
@@ -60,11 +76,11 @@ try {
       page.locator('[data-platform="android"] .download-button'),
     ).toContainText("Download Android APK");
   await expect(
-    page.locator('[data-platform="macos-intel"] .download-button'),
+    page.locator('[data-platform="macos"] .download-button'),
   ).toContainText("Download macOS Intel");
-  await expect(page.locator('[data-i18n="macIntelSigning"]')).toContainText(
-    "Intel device testing",
-  );
+  await expect(
+    page.locator('[data-platform="macos"] .signing-note'),
+  ).toContainText("Intel device testing");
   await page.locator("#language").click();
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await page.locator("#preview-mode").click();
@@ -73,7 +89,11 @@ try {
   for (const width of [320, 390, 768]) {
     const mobile = await browser.newPage({ viewport: { width, height: 844 } });
     mobile.on("pageerror", (error) => errors.push(error.message));
-    await mobile.goto(`${base}/mk1-lite/`);
+    await mobile.goto(
+      new URL(base).pathname === "/"
+        ? `${base.replace(/\/$/, "")}/mk1-lite/`
+        : base,
+    );
     await expect(mobile.locator("#release-status")).not.toContainText(
       "正在读取",
     );
@@ -89,7 +109,7 @@ try {
     if (width === 390) {
       await mobile.screenshot({ path: "artifacts/download-page-mobile.png" });
       await mobile
-        .locator('[data-platform="android"]')
+        .locator('[data-platform="macos"]')
         .scrollIntoViewIfNeeded();
       await mobile.screenshot({
         path: "artifacts/download-page-mobile-downloads.png",
@@ -119,7 +139,7 @@ try {
   await checkCards(page, independent);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: four download cards, independent release tags/versions/checksums, legacy manifest fallback, Android bilingual instructions, 320/390/768px layouts and GitHub Pages subpath.",
+    "PASS: three platform cards with ARM64/Intel selector, independent release tags/versions/checksums, legacy manifest fallback, Android bilingual instructions, 320/390/768px layouts and GitHub Pages subpath.",
   );
 } finally {
   await browser.close();
