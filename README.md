@@ -88,11 +88,11 @@ Android：配置 JDK 17、Android SDK Platform 35 与 Build Tools 35.0.0，执�
 
 图标源在 `public/app-icon.svg`，`npm run icons` 重新生成平台资源。macOS ICNS 使用1024透明画布和824主体，Windows 使用全幅图标。安卓独立矢量源在 `android/artwork/launcher-foreground.svg`，`npm run icons:android` 生成文字缩小并预留安全区的图标。
 
-自动更新密钥、签名产物和三端发布步骤见 [自动更新说明](docs/AUTO-UPDATES.md)。已发布的旧版需要先手动安装一次 0.3.0 或更新版本。
+自动更新密钥、签名产物和三端发布步骤见 [自动更新说明](docs/AUTO-UPDATES.md)。已发布的旧版需要先手动安装一次 0.3.1 或更新版本。
 
 ## GitHub Pages 下载页
 
-静态页面位于 `docs/`，版本和下载状态由 `docs/releases.json` 管理。只有真实公开的 Release 资产才启用下载按钮，校验值与安装包对应。各平台可独立设置版本与标签，安卓测试版使用 `android-v0.2.8`，macOS ARM64、Intel 与 Windows 桌面测试版使用 `v0.3.0`。
+静态页面位于 `docs/`，版本和下载状态由 `docs/releases.json` 管理。只有真实公开的 Release 资产才启用下载按钮，校验值与安装包对应。各平台可独立设置版本与标签，安卓测试版使用 `android-v0.2.8`，macOS ARM64、Intel 与 Windows 桌面测试版使用 `v0.3.1`。
 
 本地预览下载页：`npm run site:dev`，打开 `http://127.0.0.1:5180/`。启动后可用 `npm run site:check` 验证下载状态、语言和响应式布局。
 
