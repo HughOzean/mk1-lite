@@ -1097,6 +1097,9 @@ const displayMessages = {
 } as const;
 const desktopMessages = {
   en: {
+    treeRemoveFolder: "Remove folder from list",
+    autoSaveConflict:
+      "This file changed outside the app. Auto-save was skipped; review it before saving manually.",
     treeOpenFolder: "Open folder",
     orderedList: "Ordered list",
     strike: "Strikethrough",
@@ -1110,6 +1113,9 @@ const desktopMessages = {
     checkUpdates: "Check for updates",
   },
   zh: {
+    treeRemoveFolder: "从列表移除文件夹",
+    autoSaveConflict:
+      "文件已在其他地方修改，自动保存已跳过。请检查内容后手动保存。",
     treeOpenFolder: "打开文件夹",
     orderedList: "有序列表",
     strike: "删除线",
@@ -1123,6 +1129,9 @@ const desktopMessages = {
     checkUpdates: "检查更新",
   },
   pt: {
+    treeRemoveFolder: "Remover pasta da lista",
+    autoSaveConflict:
+      "O arquivo foi alterado fora do aplicativo. Salvamento automático ignorado; revise antes de salvar.",
     treeOpenFolder: "Abrir pasta",
     orderedList: "Lista numerada",
     strike: "Tachado",
@@ -1136,6 +1145,9 @@ const desktopMessages = {
     checkUpdates: "Buscar atualizações",
   },
   fr: {
+    treeRemoveFolder: "Retirer le dossier de la liste",
+    autoSaveConflict:
+      "Ce fichier a été modifié ailleurs. Enregistrement automatique ignoré ; vérifiez avant d’enregistrer.",
     treeOpenFolder: "Ouvrir un dossier",
     orderedList: "Liste numérotée",
     strike: "Barré",
@@ -1149,6 +1161,9 @@ const desktopMessages = {
     checkUpdates: "Rechercher des mises à jour",
   },
   de: {
+    treeRemoveFolder: "Ordner aus Liste entfernen",
+    autoSaveConflict:
+      "Die Datei wurde außerhalb der App geändert. Automatisches Speichern übersprungen; bitte vor dem Speichern prüfen.",
     treeOpenFolder: "Ordner öffnen",
     orderedList: "Nummerierte Liste",
     strike: "Durchgestrichen",
@@ -1162,6 +1177,9 @@ const desktopMessages = {
     checkUpdates: "Nach Updates suchen",
   },
   ru: {
+    treeRemoveFolder: "Убрать папку из списка",
+    autoSaveConflict:
+      "Файл изменён вне приложения. Автосохранение пропущено; проверьте содержимое перед сохранением.",
     treeOpenFolder: "Открыть папку",
     orderedList: "Нумерованный список",
     strike: "Зачёркнутый",

@@ -1,6 +1,6 @@
 {
   "name": "mark1light",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -32,7 +32,9 @@
     "icons:android": "node scripts/generate-android-icons.mjs",
     "test:android:open": "node scripts/android-open-intent-check.mjs",
     "test:desktop": "node scripts/desktop-features-check.mjs",
-    "test:updater": "node scripts/updater-check.mjs"
+    "test:updater": "node scripts/updater-check.mjs",
+    "test:autosave": "node scripts/autosave-check.mjs",
+    "test:autosave:integration": "node scripts/autosave-integration-check.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.8.1",

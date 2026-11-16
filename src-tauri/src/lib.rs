@@ -336,6 +336,7 @@ pub fn run() {
     let builder = builder
         .manage(OpenFileQueue::default())
         .manage(folder_tree::MarkdownDirectories::default())
+        .manage(folder_tree::DirectoryWatches::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -343,6 +344,7 @@ pub fn run() {
             take_opened_files,
             set_default_markdown_app,
             folder_tree::choose_markdown_directory,
+            folder_tree::watch_markdown_directories,
             folder_tree::authorize_directory_for_file,
             folder_tree::list_markdown_directory,
             folder_tree::read_markdown_tree_file,

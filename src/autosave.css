@@ -1,0 +1,106 @@
+.autosave-settings {
+  border-top: 1px solid var(--border);
+  margin-top: 22px;
+  padding-top: 4px;
+}
+.autosave-settings .settings-intro {
+  margin-bottom: 16px;
+}
+.autosave-interval-label {
+  color: var(--subtle);
+  font-size: 11px;
+  margin-bottom: 10px;
+}
+.autosave-wheels {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  max-width: 300px;
+  padding: 12px 20px 6px;
+  margin: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--editor-bg);
+}
+.autosave-unit {
+  min-width: 0;
+  flex: 1;
+  max-width: 100px;
+  text-align: center;
+}
+.autosave-unit-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 20px;
+}
+.autosave-wheel-shell {
+  position: relative;
+  border-radius: 5px;
+}
+.autosave-wheel-shell:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.autosave-wheel-band {
+  position: absolute;
+  top: 72px;
+  height: 36px;
+  left: 0;
+  right: 0;
+  border: 1px solid #66cc6640;
+  border-radius: 4px;
+  background: #66cc6610;
+  pointer-events: none;
+}
+.autosave-wheel {
+  position: relative;
+  height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  outline: 0 !important;
+  mask-image: linear-gradient(transparent, #000 35%, #000 65%, transparent);
+  -webkit-mask-image: linear-gradient(
+    transparent,
+    #000 35%,
+    #000 65%,
+    transparent
+  );
+}
+.autosave-wheel::-webkit-scrollbar {
+  display: none;
+}
+.autosave-wheel-track {
+  padding: 72px 0;
+}
+.autosave-wheel-number {
+  height: 36px;
+  line-height: 36px;
+  scroll-snap-align: center;
+  color: var(--muted);
+  font: 17px/36px var(--font-mono, monospace);
+  cursor: pointer;
+  user-select: none;
+}
+.autosave-wheel-number.selected {
+  color: var(--accent);
+  font-weight: 600;
+}
+.autosave-wheel-separator {
+  padding-top: 103px;
+  font: 20px/1 var(--font-mono, monospace);
+  color: var(--muted);
+}
+.autosave-minimum {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.6;
+}

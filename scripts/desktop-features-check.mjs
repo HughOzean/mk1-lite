@@ -15,8 +15,47 @@ try {
   await expect(page.locator("#empty-state")).toBeVisible();
   const newTab = page.locator(".new-document-tab");
   await expect(newTab).toBeVisible();
+  await expect(page.locator("#tab-list > *")).toHaveCount(1);
+  await expect(page.locator("#tab-list > :last-child")).toHaveClass(
+    /new-document-tab/,
+  );
   await newTab.click();
   await expect(page.locator(".document-tab")).toHaveCount(1);
+  async function checkTrailingTab() {
+    await expect(page.locator("#tab-list > :last-child")).toHaveClass(
+      /new-document-tab/,
+    );
+    await expect(page.locator(".new-document-tab")).toHaveCount(1);
+    const dimensions = await page.locator("#tab-list").evaluate((list) => {
+      const last = list.querySelector(".document-tab:last-of-type");
+      const plus = list.querySelector(".new-document-tab");
+      const tab = last?.getBoundingClientRect();
+      const add = plus.getBoundingClientRect();
+      return tab
+        ? {
+            width: tab.width,
+            height: tab.height,
+            addWidth: add.width,
+            addHeight: add.height,
+            gap: add.left - tab.right,
+          }
+        : null;
+    });
+    assert.ok(dimensions);
+    assert.ok(
+      Math.abs(dimensions.width - dimensions.addWidth) < 1,
+      "new tab width matches document tab",
+    );
+    assert.ok(
+      Math.abs(dimensions.height - dimensions.addHeight) < 1,
+      "new tab height matches document tab",
+    );
+    assert.ok(
+      Math.abs(dimensions.gap) < 1,
+      "new tab directly follows the final document tab",
+    );
+  }
+  await checkTrailingTab();
   const editor = page.locator(".cm-content");
   async function replaceDocument(text) {
     await editor.click();
@@ -110,6 +149,7 @@ try {
   await page.locator('[data-outline-toggle="0"]').click();
   await newTab.click();
   await expect(page.locator(".document-tab")).toHaveCount(2);
+  await checkTrailingTab();
   await expect(editor).toHaveText("");
   await page.locator("[data-tab]").first().click();
   assert.equal(await documentText(), outlineSource);
@@ -143,9 +183,44 @@ try {
   );
   await expect(page.locator('[data-action="zoom-in"]')).toBeVisible();
   await expect(page.locator('[data-format="orderedList"]')).toBeVisible();
+  // The add tab stays beside the last document even when the strip overflows.
+  for (let index = 0; index < 9; index++) await newTab.click();
+  await checkTrailingTab();
+  assert.ok(
+    await page
+      .locator("#tab-list")
+      .evaluate((list) => list.scrollWidth > list.clientWidth),
+  );
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  const addBounds = await newTab.boundingBox();
+  assert.ok(addBounds.x >= 0 && addBounds.x + addBounds.width <= 1024);
+  await page.screenshot({ path: "artifacts/workspace-tabs-overflow.png" });
+
+  // App-owned save controls use theme accent green, never the high-saturation highlight.
+  await page.locator("[data-close-tab]").last().click();
+  await expect(page.locator("#close-document")).toBeVisible();
+  const saveChoice = page.locator('[data-close-choice="save"]');
+  await expect(saveChoice).toHaveCSS("background-color", "rgb(102, 204, 102)");
+  await expect(saveChoice).toHaveCSS("border-top-color", "rgb(102, 204, 102)");
+  await page.screenshot({ path: "artifacts/workspace-save-green.png" });
+  await page.locator('[data-close-choice="cancel"]').click();
+  await page.locator('[data-menu="menuFile"]').click();
+  await expect(page.locator('[data-menu-action="save"]')).toHaveCSS(
+    "color",
+    "rgb(102, 204, 102)",
+  );
+  await expect(page.locator('[data-menu-action="save-as"]')).toHaveCSS(
+    "color",
+    "rgb(102, 204, 102)",
+  );
+  await page.keyboard.press("Escape");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: new-document tab, multiline ordered list, strikethrough, inline code, horizontal rule, editor-only font zoom, outline branch/all folding without document changes, desktop layout, no runtime errors.",
+    "PASS: new-document tab, multiline ordered list, strikethrough, inline code, horizontal rule, editor-only font zoom, outline branch/all folding without document changes, desktop layout, same-size trailing add tab/overflow, Mk.1 green save actions, no runtime errors.",
   );
 } finally {
   await browser.close();

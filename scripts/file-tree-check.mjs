@@ -142,65 +142,224 @@ try {
 
   const workspace = await pageFor(() => {
     window.folderSelection = "/workspace";
+    window.directoryLists = {
+      "/workspace": [
+        { name: "sub", path: "/workspace/sub", isDirectory: true },
+      ],
+      "/workspace/sub": [
+        {
+          name: "nested.md",
+          path: "/workspace/sub/nested.md",
+          isDirectory: false,
+        },
+      ],
+      "/other": [
+        { name: "other.md", path: "/other/other.md", isDirectory: false },
+      ],
+    };
+    window.watchCalls = [];
+    window.listCalls = [];
+    window.__TAURI_EVENT_PLUGIN_INTERNALS__ = { unregisterListener() {} };
     window.__TAURI_INTERNALS__ = {
+      transformCallback: (callback) => {
+        window.treeEventCallback = callback;
+        return 1;
+      },
       invoke: async (command, args) => {
+        if (command === "plugin:event|listen") return 1;
+        if (command === "plugin:event|unlisten") return;
         if (command === "choose_markdown_directory")
           return window.folderSelection;
+        if (command === "watch_markdown_directories") {
+          window.watchCalls.push(args);
+          return;
+        }
         if (command === "list_markdown_directory") {
-          return args.path === "/workspace"
-            ? [{ name: "sub", path: "/workspace/sub", isDirectory: true }]
-            : [
-                {
-                  name: "nested.md",
-                  path: "/workspace/sub/nested.md",
-                  isDirectory: false,
-                },
-              ];
+          window.listCalls.push(args.path);
+          if (window.holdSnapshots && args.path === "/workspace")
+            return new Promise((resolve) => {
+              window.finishSnapshot = () =>
+                resolve(window.directoryLists[args.path]);
+            });
+          if (window.delayListing)
+            return new Promise((resolve) => {
+              window.resolveListing = () =>
+                resolve([
+                  {
+                    name: "stale.md",
+                    path: args.path + "/stale.md",
+                    isDirectory: false,
+                  },
+                ]);
+            });
+          return window.directoryLists[args.path] || [];
         }
         if (command === "read_markdown_tree_file")
-          return { path: args.path, name: "nested.md", text: "# nested" };
+          return {
+            path: args.path,
+            name: args.path.split("/").pop(),
+            text: "# selected",
+          };
         throw new Error("Unexpected command: " + command);
       },
     };
   });
-  await expect(workspace.page.locator(".tree-open-folder")).toBeVisible();
-  await workspace.page.locator(".tree-open-folder").click();
-  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
-    "workspace",
-  );
-  await workspace.page
-    .getByRole("treeitem", { name: "sub", exact: true })
-    .click();
-  await workspace.page
-    .getByRole("treeitem", { name: "nested.md", exact: true })
-    .click();
-  await workspace.page.waitForFunction(() => window.testOpen.length === 1);
-  await workspace.page.evaluate(() =>
+  const wp = workspace.page;
+  await wp.locator(".tree-open-folder").click();
+  await expect(wp.locator(".tree-root-title")).toHaveText("workspace");
+  await wp.getByRole("treeitem", { name: "sub", exact: true }).click();
+  await wp.getByRole("treeitem", { name: "nested.md", exact: true }).click();
+  await wp.waitForFunction(() => window.testOpen.length === 1);
+  await wp.evaluate(() =>
     window.tree.setDocument({
       id: "nested",
       name: "nested.md",
       path: "/workspace/sub/nested.md",
     }),
   );
-  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
+  await expect(wp.locator(".tree-row.active")).toHaveText("nested.md");
+  await wp.evaluate(() => {
+    window.folderSelection = "/other";
+  });
+  await wp.locator(".tree-open-folder").click();
+  await expect(wp.locator(".tree-root-title")).toHaveText([
     "workspace",
+    "other",
+  ]);
+  await wp.locator(".tree-open-folder").click();
+  await expect(wp.locator(".tree-root-title")).toHaveCount(2);
+  await wp.waitForFunction(() =>
+    window.watchCalls.some(
+      (call) =>
+        call.root === "/workspace" && call.paths.includes("/workspace/sub"),
+    ),
   );
-  await expect(workspace.page.locator(".tree-row.active")).toHaveText(
-    "nested.md",
+  await wp.evaluate(() => {
+    document.querySelector("#tree").style.height = "170px";
+    const list = document.querySelector(".tree-workspaces");
+    list.scrollTop = 30;
+    window.savedScroll = list.scrollTop;
+    window.savedNode = document.querySelector(
+      '[data-tree-key="/workspace/sub/nested.md"]',
+    );
+    window.savedNode.focus({ preventScroll: true });
+    window.holdSnapshots = true;
+    window.treeEventCallback({ payload: { root: "/workspace" } });
+  });
+  await wp.waitForFunction(() => !!window.finishSnapshot);
+  await expect(
+    wp.getByRole("treeitem", { name: "nested.md", exact: true }),
+  ).toBeVisible();
+  assert.equal(
+    await wp.evaluate(
+      () =>
+        document.querySelector('[data-tree-key="/workspace/sub/nested.md"]') ===
+        window.savedNode,
+    ),
+    true,
+    "refresh in flight must retain old rows",
   );
-  await workspace.page.evaluate(() => window.tree.setDocument(null));
-  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
-    "workspace",
+  await wp.evaluate(() => {
+    window.holdSnapshots = false;
+    window.finishSnapshot();
+  });
+  await wp.waitForTimeout(100);
+  assert.equal(
+    await wp.evaluate(() => document.activeElement === window.savedNode),
+    true,
+    "unchanged refresh must preserve the focused DOM node",
   );
-  await workspace.page.evaluate(() => {
+  assert.equal(
+    await wp.evaluate(
+      () =>
+        document.querySelector(".tree-workspaces").scrollTop ===
+        window.savedScroll,
+    ),
+    true,
+    "unchanged refresh must preserve tree scroll position",
+  );
+  await wp.evaluate(() => {
+    document.querySelector("#tree").style.height = "600px";
+  });
+  await wp.evaluate(() => {
+    window.directoryLists["/workspace/sub"].push({
+      name: "added.md",
+      path: "/workspace/sub/added.md",
+      isDirectory: false,
+    });
+    window.treeEventCallback({ payload: { root: "/workspace" } });
+  });
+  await expect(
+    wp.getByRole("treeitem", { name: "added.md", exact: true }),
+  ).toBeVisible();
+  assert.equal(
+    await wp.evaluate(() => window.testOpen.length),
+    1,
+    "filesystem refresh must never reload open document text",
+  );
+  await wp.locator(".tree-root-title").first().click();
+  await expect(
+    wp.getByRole("treeitem", { name: "added.md", exact: true }),
+  ).toHaveCount(0);
+  await wp.waitForFunction(() =>
+    window.watchCalls.some(
+      (call) => call.root === "/workspace" && call.paths.length === 0,
+    ),
+  );
+  await wp.evaluate(() => {
+    window.listCalls = [];
+    window.treeEventCallback({ payload: { root: "/workspace" } });
+  });
+  await wp.waitForTimeout(100);
+  assert.deepEqual(
+    await wp.evaluate(() => window.listCalls),
+    [],
+    "collapsed root must not be scanned on events",
+  );
+  await wp.locator(".tree-root-title").first().click();
+  await expect(
+    wp.getByRole("treeitem", { name: "added.md", exact: true }),
+  ).toBeVisible();
+  await wp.evaluate(() => {
+    window.directoryLists["/workspace/sub"] = [
+      {
+        name: "renamed.md",
+        path: "/workspace/sub/renamed.md",
+        isDirectory: false,
+      },
+    ];
+    window.treeEventCallback({ payload: { root: "/workspace" } });
+  });
+  await expect(
+    wp.getByRole("treeitem", { name: "added.md", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    wp.getByRole("treeitem", { name: "renamed.md", exact: true }),
+  ).toBeVisible();
+  await wp.evaluate(() => {
+    window.tree.setDocument(null);
     window.folderSelection = null;
   });
-  await workspace.page.locator(".tree-open-folder").click();
-  await expect(workspace.page.locator(".tree-root-title")).toHaveText(
-    "workspace",
+  await wp.locator(".tree-open-folder").click();
+  await expect(wp.locator(".tree-root-title")).toHaveCount(2);
+  await wp.locator(".tree-remove").first().click();
+  await expect(wp.locator(".tree-root-title")).toHaveText("other");
+  await wp.waitForFunction(
+    () =>
+      window.watchCalls.at(-1)?.root === "/workspace" &&
+      window.watchCalls.at(-1)?.paths.length === 0,
   );
+  await wp.evaluate(() => {
+    window.delayListing = true;
+    window.treeEventCallback({ payload: { root: "/other" } });
+  });
+  await wp.waitForFunction(() => !!window.resolveListing);
+  await wp.locator(".tree-remove").click();
+  await wp.evaluate(() => window.resolveListing());
+  await expect(wp.locator(".tree-row")).toHaveCount(0);
+  await expect(wp.locator(".tree-root-title")).toHaveCount(0);
   assert.deepEqual(workspace.errors, []);
-  await workspace.page.close();
+  await wp.close();
 
   const web = await pageFor(() => {
     const file = (name, text) => ({
@@ -221,8 +380,13 @@ try {
     const root = {
       kind: "directory",
       name: "selected-folder",
+      isSameEntry: async (other) => other.name === "selected-folder",
       entries: async function* () {
-        yield ["first.md", file("first.md", "# first")];
+        yield [
+          "first.md",
+          file("first.md", window.webReplace ? "# replacement" : "# first"),
+        ];
+        if (window.webAdded) yield ["new.md", file("new.md", "# new")];
         yield ["second.markdown", file("second.markdown", "# second")];
         yield ["note.txt", file("note.txt", "private")];
         yield ["sub", nested];
@@ -291,10 +455,48 @@ try {
     "treeRestoredNoFile",
   );
   await expect(web.page.locator(".tree-row")).toHaveCount(0);
+  await web.page.locator(".tree-open-folder").click();
+  await expect(web.page.locator(".tree-root-title")).toHaveText(
+    "selected-folder",
+  );
+  await web.page.locator(".tree-open-folder").click();
+  await expect(web.page.locator(".tree-root-title")).toHaveCount(1);
+  await web.page.evaluate(() => {
+    window.webAdded = true;
+    window.dispatchEvent(new Event("focus"));
+  });
+  await expect(
+    web.page.getByRole("treeitem", { name: "new.md", exact: true }),
+  ).toBeVisible();
+  await web.page.evaluate(() => {
+    window.savedBrowserRow = document.querySelector(
+      '[data-tree-key$="/first.md"]',
+    );
+    window.webReplace = true;
+    window.dispatchEvent(new Event("focus"));
+  });
+  await web.page.waitForTimeout(100);
+  assert.equal(
+    await web.page.evaluate(
+      () =>
+        document.querySelector('[data-tree-key$="/first.md"]') ===
+        window.savedBrowserRow,
+    ),
+    true,
+  );
+  await web.page
+    .getByRole("treeitem", { name: "first.md", exact: true })
+    .click();
+  await web.page.waitForFunction(() => window.testOpen.length === 2);
+  assert.equal(
+    await web.page.evaluate(() => window.testOpen[1].text),
+    "# replacement",
+    "same-name replacement must open through the newest file handle",
+  );
   assert.deepEqual(web.errors, []);
   await web.page.close();
   console.log(
-    "PASS: native lazy Markdown tree, active folder scope, ignored text files, stale async protection, honest web permission state, containing-folder verification, nested folder rebinding, restored document fallback.",
+    "PASS: multiple deduplicated folders, independent collapse/remove, native event refresh, deletion/rename, no document reload, cancelled stale directory read, native lazy Markdown tree, active folder scope, ignored text files, stale async protection, honest web permission state, containing-folder verification, nested folder rebinding, restored document fallback.",
   );
 } finally {
   await browser.close();

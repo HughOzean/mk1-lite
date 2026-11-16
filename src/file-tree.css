@@ -184,3 +184,42 @@
     transition: none;
   }
 }
+
+.tree-workspaces {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.tree-workspaces .tree-list {
+  overflow: visible;
+  flex: none;
+}
+.tree-workspaces .tree-root {
+  margin-top: 5px;
+}
+button.tree-root-title {
+  padding: 3px 0;
+  text-align: left;
+  background: none;
+  border: 0;
+}
+.tree-root-title > svg:first-child {
+  width: 10px;
+  height: 10px;
+  transform: rotate(90deg);
+}
+.tree-root-title[aria-expanded="false"] > svg:first-child {
+  transform: none;
+}
+.tree-remove {
+  width: 25px;
+  height: 27px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 17px;
+}
+.tree-remove:hover {
+  color: var(--text);
+  background: #ffffff0a;
+}

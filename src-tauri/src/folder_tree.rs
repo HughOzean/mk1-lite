@@ -49,6 +49,125 @@ pub(crate) async fn choose_markdown_directory(
     }
 }
 
+#[cfg(desktop)]
+struct WatchedRoot {
+    watcher: notify::RecommendedWatcher,
+    paths: HashSet<PathBuf>,
+}
+
+#[derive(Default)]
+pub(crate) struct DirectoryWatches {
+    #[cfg(desktop)]
+    roots: Mutex<std::collections::HashMap<PathBuf, WatchedRoot>>,
+}
+
+// Watch only the root and expanded directories, non-recursively. Authorization and
+// canonical containment are checked for every path before it reaches the backend.
+#[tauri::command]
+pub(crate) fn watch_markdown_directories(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, MarkdownDirectories>,
+    watches: tauri::State<'_, DirectoryWatches>,
+    root: String,
+    paths: Vec<String>,
+) -> Result<(), String> {
+    #[cfg(desktop)]
+    {
+        use notify::{RecursiveMode, Watcher};
+        use std::sync::mpsc::{channel, RecvTimeoutError};
+        use std::time::{Duration, Instant};
+        use tauri::Emitter;
+        let requested_root = PathBuf::from(&root);
+        // Exact previously-authorized identity allows stopping a removed root even
+        // when its directory has since been deleted from disk.
+        let roots = state.0.lock().map_err(|_| "open-failed")?;
+        let canonical_root = if roots.contains(&requested_root) {
+            requested_root
+        } else {
+            requested_root
+                .canonicalize()
+                .map_err(|_| "invalid-directory")?
+        };
+        if !roots.contains(&canonical_root) {
+            return Err("directory-not-authorized".into());
+        }
+        if paths.len() > 512 {
+            return Err("directory-too-large".into());
+        }
+        let mut desired = HashSet::new();
+        for path in paths {
+            let (_, path) = checked_directory(&roots, &canonical_root, Path::new(&path))?;
+            if !path.is_dir() {
+                return Err("invalid-directory".into());
+            }
+            desired.insert(path);
+        }
+        drop(roots);
+        let mut watched = watches.roots.lock().map_err(|_| "open-failed")?;
+        if desired.is_empty() {
+            watched.remove(&canonical_root);
+            return Ok(());
+        }
+        if !watched.contains_key(&canonical_root) {
+            let (tx, rx) = channel::<()>();
+            let watcher =
+                notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
+                    if result
+                        .map(|event| !matches!(event.kind, notify::EventKind::Access(_)))
+                        .unwrap_or(true)
+                    {
+                        let _ = tx.send(());
+                    }
+                })
+                .map_err(|_| "watch-failed")?;
+            let event_root = canonical_root.to_string_lossy().into_owned();
+            std::thread::spawn(move || {
+                while rx.recv().is_ok() {
+                    let started = Instant::now();
+                    loop {
+                        match rx.recv_timeout(Duration::from_millis(250)) {
+                            Ok(_) if started.elapsed() < Duration::from_secs(1) => continue,
+                            Err(RecvTimeoutError::Disconnected) => return,
+                            _ => break,
+                        }
+                    }
+                    let _ = app.emit(
+                        "markdown-directory-changed",
+                        serde_json::json!({"root": event_root}),
+                    );
+                }
+            });
+            watched.insert(
+                canonical_root.clone(),
+                WatchedRoot {
+                    watcher,
+                    paths: HashSet::new(),
+                },
+            );
+        }
+        let entry = watched.get_mut(&canonical_root).ok_or("watch-failed")?;
+        let removed: Vec<_> = entry.paths.difference(&desired).cloned().collect();
+        for path in removed {
+            let _ = entry.watcher.unwatch(&path);
+            entry.paths.remove(&path);
+        }
+        let added: Vec<_> = desired.difference(&entry.paths).cloned().collect();
+        for path in added {
+            entry
+                .watcher
+                .watch(&path, RecursiveMode::NonRecursive)
+                .map_err(|_| "watch-failed")?;
+            entry.paths.insert(path);
+        }
+        Ok(())
+    }
+    #[cfg(not(desktop))]
+    {
+        let _ = (app, state, watches, root, paths);
+        Err("unsupported".into())
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct MarkdownDirectories(Mutex<HashSet<PathBuf>>);
 
@@ -222,6 +341,48 @@ mod tests {
             let _ = fs::remove_dir_all(&self.0);
         }
     }
+    #[cfg(desktop)]
+    #[test]
+    fn native_watcher_reports_file_create_rename_and_remove() {
+        use notify::{RecursiveMode, Watcher};
+        use std::sync::mpsc;
+        use std::time::{Duration, Instant};
+        let fixture = Fixture::new();
+        let (tx, rx) = mpsc::channel();
+        let mut watcher =
+            notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
+                if let Ok(event) = event {
+                    let _ = tx.send(event);
+                }
+            })
+            .unwrap();
+        watcher
+            .watch(&fixture.0, RecursiveMode::NonRecursive)
+            .unwrap();
+        let wait_for = |expected: &Path| {
+            let deadline = Instant::now() + Duration::from_secs(8);
+            while Instant::now() < deadline {
+                if let Ok(event) = rx.recv_timeout(Duration::from_millis(250)) {
+                    if event.paths.iter().any(|path| path == expected) {
+                        return;
+                    }
+                }
+            }
+            panic!("No native filesystem event for {}", expected.display());
+        };
+        let first = fixture.0.join("created.md");
+        fs::write(&first, "# created").unwrap();
+        wait_for(&first);
+        let renamed = fixture.0.join("renamed.md");
+        fs::rename(&first, &renamed).unwrap();
+        wait_for(&renamed);
+        // Drain rename notifications before validating deletion.
+        while rx.try_recv().is_ok() {}
+        fs::remove_file(&renamed).unwrap();
+        wait_for(&renamed);
+        watcher.unwatch(&fixture.0).unwrap();
+    }
+
     #[test]
     fn lists_only_markdown_files_and_directories_in_sorted_order() {
         let fixture = Fixture::new();

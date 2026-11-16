@@ -85,7 +85,14 @@ export function createFileTree(options: {
   const directoryRoots = new WeakMap<DirectoryHandle, RootState>();
   let doc: TreeDocument | null = null;
   let root: RootState | null = null;
-  let selectedRoot: RootState | null = null;
+  const selectedRoots = new Map<string, RootState>();
+  const collapsedRoots = new Set<string>();
+  let disposed = false;
+  const queuedRefresh = new Set<RootState>();
+  let renderHost = container;
+  const visibleRoots = () =>
+    selectedRoots.size ? [...selectedRoots.values()] : root ? [root] : [];
+  const isVisible = (state: RootState) => visibleRoots().includes(state);
   let activeKey = "";
   let generation = 0;
   let loadingDocument = false;
@@ -143,7 +150,21 @@ export function createFileTree(options: {
   }
 
   function render() {
-    renderContent();
+    const previous = container.querySelector<HTMLElement>(".tree-workspaces");
+    const scroll = previous?.scrollTop || 0;
+    const focused =
+      document.activeElement instanceof HTMLElement &&
+      container.contains(document.activeElement)
+        ? document.activeElement.dataset.focusKey
+        : undefined;
+    container.replaceChildren();
+    renderHost = document.createElement("div");
+    renderHost.className = "tree-workspaces";
+    container.append(renderHost);
+    const states = visibleRoots();
+    if (states.length) for (const state of states) renderContent(state);
+    else renderContent(null);
+    renderHost.scrollTop = scroll;
     const footer = document.createElement("div");
     footer.className = "tree-footer";
     const button = document.createElement("button");
@@ -155,26 +176,25 @@ export function createFileTree(options: {
     button.append(label);
     button.disabled = picking || (!native() && !picker());
     button.addEventListener("click", () => void openFolder());
+    button.dataset.focusKey = "open-folder";
     footer.append(button);
     container.append(footer);
+    if (focused)
+      [...container.querySelectorAll<HTMLElement>("[data-focus-key]")]
+        .find((element) => element.dataset.focusKey === focused)
+        ?.focus({ preventScroll: true });
+    scheduleWatchSync();
   }
-  function renderContent() {
-    const oldList = container.querySelector<HTMLElement>(".tree-list");
-    const scroll = oldList?.scrollTop || 0;
-    const focused = container.contains(document.activeElement)
-      ? (document.activeElement as HTMLElement).dataset.treeKey
-      : undefined;
-    const rows = new Map<string, HTMLButtonElement>();
-    container.replaceChildren();
-    if (!doc && !root) {
+  function renderContent(candidate: RootState | null) {
+    if (!doc && !candidate) {
       renderMessage("treeEmpty");
       return;
     }
-    if (loadingDocument) {
+    if (loadingDocument && !candidate) {
       renderMessage("treeLoading");
       return;
     }
-    if (!root) {
+    if (!candidate) {
       renderMessage(
         messageKey ||
           (native()
@@ -193,16 +213,26 @@ export function createFileTree(options: {
         button.addEventListener("click", () => {
           void chooseFolder();
         });
-        container.append(button);
+        renderHost.append(button);
       }
       return;
     }
-    const state = root;
+    const state = candidate;
     const header = document.createElement("div");
     header.className = "tree-root";
-    const title = document.createElement("span");
+    const title = document.createElement("button");
     title.className = "tree-root-title";
-    title.innerHTML = folderIcon;
+    title.type = "button";
+    title.dataset.focusKey = `${state.id}:root`;
+    title.setAttribute("aria-expanded", String(!collapsedRoots.has(state.id)));
+    title.innerHTML = arrowIcon + folderIcon;
+    title.addEventListener("click", () => {
+      if (collapsedRoots.has(state.id)) {
+        collapsedRoots.delete(state.id);
+        void refreshRoot(state);
+      } else collapsedRoots.add(state.id);
+      render();
+    });
     const name = document.createElement("span");
     name.textContent = state.name;
     name.title = state.nativePath || state.name;
@@ -212,9 +242,35 @@ export function createFileTree(options: {
     refreshButton.innerHTML = refreshIcon;
     refreshButton.title = t("treeRefresh");
     refreshButton.setAttribute("aria-label", t("treeRefresh"));
-    refreshButton.addEventListener("click", refresh);
+    refreshButton.dataset.focusKey = `${state.id}:refresh`;
+    refreshButton.addEventListener("click", () => refreshRoot(state));
     header.append(title, refreshButton);
-    container.append(header);
+    if (selectedRoots.has(state.id)) {
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "tree-remove";
+      remove.textContent = "×";
+      remove.title = t("treeRemoveFolder");
+      remove.setAttribute(
+        "aria-label",
+        `${t("treeRemoveFolder")}: ${state.name}`,
+      );
+      remove.dataset.focusKey = `${state.id}:remove`;
+      remove.addEventListener("click", () => {
+        selectedRoots.delete(state.id);
+        state.version++;
+        state.loading.clear();
+        state.pending.clear();
+        if (root === state) root = selectedRoots.values().next().value || null;
+        render();
+        container
+          .querySelector<HTMLElement>(".tree-open-folder")
+          ?.focus({ preventScroll: true });
+      });
+      header.append(remove);
+    }
+    renderHost.append(header);
+    if (collapsedRoots.has(state.id)) return;
     if (messageKey) renderMessage(messageKey);
     const list = document.createElement("div");
     list.className = "tree-list";
@@ -232,10 +288,10 @@ export function createFileTree(options: {
         retry.style.setProperty("--tree-depth", String(level));
         retry.title = t("treeRefresh");
         retry.addEventListener("click", () => {
-          void loadChildren(state, key, findDirectory(state, key));
+          void loadChildren(state, key, findDirectory(state, key), true);
         });
         list.append(retry);
-        return;
+        if (!state.children.has(key)) return;
       }
       const children = state.children.get(key);
       if (!children) return;
@@ -248,6 +304,7 @@ export function createFileTree(options: {
         row.type = "button";
         row.className = "tree-row";
         row.dataset.treeKey = entry.key;
+        row.dataset.focusKey = `${state.id}:${entry.key}`;
         row.style.setProperty("--tree-depth", String(level));
         row.setAttribute("role", "treeitem");
         row.setAttribute("aria-level", String(level + 1));
@@ -262,7 +319,7 @@ export function createFileTree(options: {
           !entry.isDirectory &&
           (entry.key === activeKey ||
             (!!state.nativePath &&
-              !selectedRoot &&
+              !selectedRoots.size &&
               key === state.rootKey &&
               entry.name === doc?.name));
         row.classList.toggle("active", active);
@@ -277,18 +334,27 @@ export function createFileTree(options: {
         label.className = "tree-name";
         label.textContent = entry.name;
         row.append(arrow, glyph, label);
-        rows.set(entry.key, row);
         const toggle = () => {
           if (state.expanded.has(entry.key)) state.expanded.delete(entry.key);
           else {
             state.expanded.add(entry.key);
-            void loadChildren(state, entry.key, entry.directory);
+            void loadChildren(
+              state,
+              entry.key,
+              findDirectory(state, entry.key),
+              true,
+            );
           }
           render();
         };
         row.addEventListener("click", () => {
           if (entry.isDirectory) toggle();
-          else void openEntry(state, entry);
+          else {
+            const currentEntry = state.children
+              .get(key)
+              ?.find((candidate) => candidate.key === entry.key);
+            if (currentEntry) void openEntry(state, currentEntry);
+          }
         });
         row.addEventListener("keydown", (event) => {
           if (
@@ -330,15 +396,13 @@ export function createFileTree(options: {
         )
       ]?.focus();
     });
-    container.append(list);
-    list.scrollTop = scroll;
-    if (focused) rows.get(focused)?.focus({ preventScroll: true });
+    renderHost.append(list);
   }
   function renderMessage(key: string) {
     const message = document.createElement("p");
     message.className = "tree-message";
     message.textContent = t(key);
-    container.append(message);
+    renderHost.append(message);
   }
   function findDirectory(
     state: RootState,
@@ -355,14 +419,17 @@ export function createFileTree(options: {
     state: RootState,
     key: string,
     directory?: DirectoryHandle,
+    force = false,
   ): Promise<void> {
-    if (state.children.has(key)) return;
+    if (state.children.has(key) && !force) return;
     const pending = state.pending.get(key);
     if (pending) return pending;
     const version = state.version;
+    const previous = state.children.get(key);
+    const hadError = state.errors.has(key);
+    let needsRender = false;
     state.loading.add(key);
-    state.errors.delete(key);
-    if (root === state) render();
+    if (!previous && isVisible(state) && !disposed) render();
     const work = (async () => {
       await Promise.resolve();
       try {
@@ -409,17 +476,36 @@ export function createFileTree(options: {
               sensitivity: "base",
             }),
         );
+        needsRender =
+          hadError ||
+          !previous ||
+          previous.length !== entries.length ||
+          entries.some((entry, index) => {
+            const old = previous[index];
+            return (
+              old.key !== entry.key ||
+              old.name !== entry.name ||
+              old.isDirectory !== entry.isDirectory
+            );
+          });
+        state.errors.delete(key);
         state.children.set(key, entries);
-        for (const entry of entries)
-          if (entry.isDirectory && state.expanded.has(entry.key))
-            void loadChildren(state, entry.key, entry.directory);
+        if (!collapsedRoots.has(state.id))
+          for (const entry of entries)
+            if (entry.isDirectory && state.expanded.has(entry.key))
+              void loadChildren(state, entry.key, entry.directory, force);
       } catch {
-        if (version === state.version) state.errors.add(key);
+        if (version === state.version) {
+          state.errors.add(key);
+          needsRender = !hadError;
+        }
       } finally {
         if (version === state.version) {
           state.loading.delete(key);
           state.pending.delete(key);
-          if (root === state) render();
+          if (needsRender && isVisible(state) && !disposed) render();
+          if (!state.pending.size && queuedRefresh.delete(state))
+            queueMicrotask(() => void refreshRoot(state));
         }
       }
     })();
@@ -452,14 +538,14 @@ export function createFileTree(options: {
           throw new Error("Missing file handle");
         const file = await entry.file.getFile();
         const text = await file.text();
-        const containingRoot =
-          selectedRoot === state ? state : browserRoot(entry.parentDirectory);
+        const containingRoot = selectedRoots.has(state.id)
+          ? state
+          : browserRoot(entry.parentDirectory);
         fileBindings.set(file, {
           root: containingRoot,
-          key:
-            selectedRoot === state
-              ? entry.key
-              : `${containingRoot.rootKey}/${file.name}`,
+          key: selectedRoots.has(state.id)
+            ? entry.key
+            : `${containingRoot.rootKey}/${file.name}`,
         });
         result = {
           path: null,
@@ -469,7 +555,7 @@ export function createFileTree(options: {
           root: containingRoot.id,
         };
       }
-      if (token !== generation || root !== state) return;
+      if (token !== generation || !isVisible(state)) return;
       onOpenFile(result);
     } catch {
       if (token === generation) notifyError();
@@ -498,14 +584,26 @@ export function createFileTree(options: {
         if (!select) return;
         const directory = await select.call(window, { mode: "read" });
         if (token !== generation) return;
-        state = browserRoot(directory);
+        let existing: RootState | undefined;
+        for (const candidate of selectedRoots.values()) {
+          if (
+            candidate.directory &&
+            directory.isSameEntry &&
+            (await directory.isSameEntry(candidate.directory))
+          ) {
+            existing = candidate;
+            break;
+          }
+        }
+        state = existing || browserRoot(directory);
       }
-      selectedRoot = state;
+      selectedRoots.set(state.id, state);
+      collapsedRoots.delete(state.id);
       root = state;
       activeKey = doc?.path || "";
       messageKey = null;
       loadingDocument = false;
-      await loadChildren(state, state.rootKey, state.directory);
+      await refreshRoot(state);
     } catch (error) {
       if (
         token === generation &&
@@ -576,12 +674,14 @@ export function createFileTree(options: {
     activeKey = "";
     messageKey = null;
     loadingDocument = false;
-    if (selectedRoot) {
-      root = selectedRoot;
+    if (selectedRoots.size) {
       const binding = next?.file && fileBindings.get(next.file);
-      activeKey = next?.path || (binding?.root === root ? binding.key : "");
+      root = binding?.root || selectedRoots.values().next().value || null;
+      activeKey = next?.path || binding?.key || "";
       render();
-      void loadChildren(root, root.rootKey, root.directory);
+      for (const state of visibleRoots())
+        if (!collapsedRoots.has(state.id))
+          void loadChildren(state, state.rootKey, state.directory);
       return;
     }
     if (!next) {
@@ -629,20 +729,107 @@ export function createFileTree(options: {
     if (native()) messageKey = "treeEmpty";
     render();
   }
+  function visibleDirectories(state: RootState): string[] {
+    if (collapsedRoots.has(state.id)) return [];
+    const paths = [state.rootKey];
+    const visit = (key: string) => {
+      for (const entry of state.children.get(key) || [])
+        if (entry.isDirectory && state.expanded.has(entry.key)) {
+          paths.push(entry.key);
+          visit(entry.key);
+        }
+    };
+    visit(state.rootKey);
+    return paths;
+  }
+  async function refreshRoot(state: RootState) {
+    if (!isVisible(state) || collapsedRoots.has(state.id) || disposed) return;
+    // Refresh directory listings only. Never read or replace open document text.
+    if (state.pending.size) {
+      queuedRefresh.add(state);
+      return;
+    }
+    await loadChildren(state, state.rootKey, state.directory, true);
+  }
   function refresh() {
-    if (!root) {
+    if (!visibleRoots().length) {
       setDocument(doc);
       return;
     }
-    const state = root;
-    state.version++;
-    state.children.clear();
-    state.loading.clear();
-    state.errors.clear();
-    state.pending.clear();
-    void loadChildren(state, state.rootKey, state.directory);
-    render();
+    for (const state of visibleRoots()) void refreshRoot(state);
+  }
+  let syncTimer: ReturnType<typeof setTimeout> | undefined;
+  const watched = new Map<string, string>();
+  let watchQueue = Promise.resolve();
+  function scheduleWatchSync() {
+    if (!native() || disposed) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      watchQueue = watchQueue.then(async () => {
+        if (disposed) return;
+        const desired = new Map(
+          visibleRoots()
+            .filter((state) => state.nativePath)
+            .map((state) => [state.nativePath!, visibleDirectories(state)]),
+        );
+        for (const path of watched.keys())
+          if (!desired.has(path)) desired.set(path, []);
+        for (const [path, paths] of desired) {
+          const signature = JSON.stringify(paths);
+          if (watched.get(path) === signature) continue;
+          try {
+            await invoke("watch_markdown_directories", { root: path, paths });
+            watched.set(path, signature);
+          } catch {
+            /* Focus/periodic refresh remains available if native watching fails. */
+          }
+        }
+      });
+    }, 80);
+  }
+  let unlisten: (() => void) | undefined;
+  if (native())
+    void import("@tauri-apps/api/event")
+      .then(({ listen }) =>
+        listen<{ root: string }>("markdown-directory-changed", (event) => {
+          const state = visibleRoots().find(
+            (state) => state.nativePath === event.payload.root,
+          );
+          if (state) void refreshRoot(state);
+        }),
+      )
+      .then((stop) => {
+        if (disposed) stop();
+        else unlisten = stop;
+      })
+      .catch(() => {});
+  const focusRefresh = () => {
+    if (!picking && !loadingDocument && document.visibilityState !== "hidden")
+      refresh();
+  };
+  window.addEventListener("focus", focusRefresh);
+  document.addEventListener("visibilitychange", focusRefresh);
+  const poll = setInterval(
+    () => {
+      if (!picking && !loadingDocument && document.visibilityState !== "hidden")
+        refresh();
+    },
+    native() ? 30000 : 5000,
+  );
+  function dispose() {
+    disposed = true;
+    clearTimeout(syncTimer);
+    clearInterval(poll);
+    unlisten?.();
+    window.removeEventListener("focus", focusRefresh);
+    document.removeEventListener("visibilitychange", focusRefresh);
+    for (const state of roots.values()) state.version++;
+    for (const path of watched.keys())
+      void invoke("watch_markdown_directories", {
+        root: path,
+        paths: [],
+      }).catch(() => {});
   }
   render();
-  return { setDocument, refresh, refreshLabels: render };
+  return { setDocument, refresh, refreshLabels: render, dispose };
 }

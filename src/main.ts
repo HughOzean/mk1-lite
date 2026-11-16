@@ -1,4 +1,5 @@
 import appInfo from "../package.json";
+import { createAutoSave, normalizeAutoSaveSettings } from "./autosave";
 import { createDesktopUpdater } from "./updater";
 import { tags } from "@lezer/highlight";
 import { EditorState, Compartment } from "@codemirror/state";
@@ -44,6 +45,7 @@ import { createShortcutSettings } from "./shortcuts";
 import { createTabContextMenu } from "./tab-context-menu";
 import "./style.css";
 import "./mobile.css";
+import "./workspace-controls.css";
 import { androidFile, isAndroidApp, watchAndroidOpenedFiles } from "./android";
 const icons: Record<string, string> = {
   file: "M6 3h8l4 4v14H6z M14 3v5h5",
@@ -96,6 +98,8 @@ interface Prefs {
   theme: "dark" | "light" | "system";
   size: number;
   editorSize: number;
+  autoSaveEnabled: boolean;
+  autoSaveMinutes: number;
   lineHeight: number;
   width: number;
   style: string;
@@ -112,6 +116,8 @@ const defaults: Prefs = {
   theme: "dark",
   size: 15,
   editorSize: 13,
+  autoSaveEnabled: true,
+  autoSaveMinutes: 15,
   lineHeight: 1.85,
   width: 760,
   style: "standard",
@@ -141,6 +147,12 @@ try {
   for (const key of Object.keys(defaults) as (keyof Prefs)[])
     if (typeof p[key] === typeof defaults[key]) (prefs as any)[key] = p[key];
 } catch {}
+const autoSaveSettings = normalizeAutoSaveSettings({
+  enabled: prefs.autoSaveEnabled,
+  intervalMinutes: prefs.autoSaveMinutes,
+});
+prefs.autoSaveEnabled = autoSaveSettings.enabled;
+prefs.autoSaveMinutes = autoSaveSettings.intervalMinutes;
 if (!(prefs.locale in languages)) prefs.locale = "zh";
 if (!["dark", "light", "system"].includes(prefs.theme)) prefs.theme = "dark";
 if (!["split", "editor", "preview"].includes(prefs.mode)) prefs.mode = "split";
@@ -162,7 +174,7 @@ const button = (key: Key, ico: string, action: string, extra = "") =>
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk.1 Lite"><img class="brand-icon" src="./favicon.svg" alt="Mk.1"><span>Mk.1 <span class="brand-light">Lite</span><small>Mark One Lite</small></span></a><div class="sidebar-tabs" role="tablist"><button data-side="files" role="tab">${icon("folder")}<span data-i18n="files"></span></button><button data-side="outline" role="tab">${icon("list")}<span data-i18n="outline"></span></button></div><div id="file-tree"></div><section id="outline-panel"><div class="outline-head"><span data-i18n="outline"></span><div>${button("outlineCollapse", "fold", "outline-collapse")}${button("outlineExpand", "unfold", "outline-expand")}</div></div><nav class="outline" aria-label="Outline"></nav></section><div class="sidebar-footer">${isAndroidApp() ? "v0.2.8 · Android" : `v${appInfo.version}`}</div></aside><button class="sidebar-backdrop" data-action="sidebar" aria-label="Close sidebar"></button>
 <div class="workspace"><header class="topbar"><div class="breadcrumb">${button("files", "menu", "sidebar", "mobile-menu")}</div><div class="component-bar" role="toolbar" aria-label="Components"><button class="component-icon cheatsheet-button" data-action="cheatsheet" aria-label="${t("cheatsheet")}" title="${t("cheatsheet")}">${icon("help")}</button><button class="component-icon settings-button" data-action="settings" aria-label="${t("settings")}" title="${t("settings")}">${icon("settings")}</button><div class="mode-toggle" role="group"><button data-mode="editor" aria-pressed="false"></button><button data-mode="preview" aria-pressed="false"></button></div></div></header>
-<div class="document-tabs"><div id="tab-list" role="tablist"></div>${button("new", "plus", "new", "new-document-tab")}<div class="view-switch" role="group" hidden>${(["editor", "split", "preview"] as const).map((v, i) => `<button data-mode="${v}" title="${t(v)}">${icon(["edit", "split", "eye"][i])}<span data-i18n="${v}"></span></button>`).join("")}</div></div>
+<div class="document-tabs"><div id="tab-list" role="tablist"></div><div class="view-switch" role="group" hidden>${(["editor", "split", "preview"] as const).map((v, i) => `<button data-mode="${v}" title="${t(v)}">${icon(["edit", "split", "eye"][i])}<span data-i18n="${v}"></span></button>`).join("")}</div></div>
 <div class="format-toolbar"><div class="format-tools"><select id="heading-level" aria-label="${t("heading")}">${[1, 2, 3, 4, 5].map((level) => `<option value="${level}">H${level}</option>`).join("")}</select><span class="divider"></span><button data-format="bold" title="${t("bold")}"><b>B</b></button><button data-format="italic" title="${t("italic")}"><i>I</i></button><button data-format="link" title="${t("link")}">${icon("link")}</button><span class="divider"></span><button data-format="quote" title="${t("quote")}">${icon("quote")}</button><button data-format="code" title="${t("code")}">${icon("code")}</button><button data-format="list" title="${t("list")}">${icon("list")}</button><span class="divider"></span><button data-format="table" title="${t("table")}">${icon("table")}</button><button data-format="orderedList" title="${t("orderedList")}">${icon("orderedList")}</button><button data-format="strike" title="${t("strike")}">${icon("strike")}</button><button data-format="inlineCode" title="${t("inlineCode")}">${icon("inlineCode")}</button><button data-format="rule" title="${t("rule")}">${icon("rule")}</button></div><div class="editor-zoom" role="group" aria-label="${t("editorFontSize")}">${button("zoomOut", "zoomOut", "zoom-out")}<output id="editor-size-label">${prefs.editorSize}px</output>${button("zoomIn", "zoomIn", "zoom-in")}</div></div>
 <main class="panes"><section class="editor-pane"><div class="pane-label"><span data-i18n="editor"></span></div><div id="editor"></div></section><section class="preview-pane"><div class="pane-label"><span data-i18n="preview"></span></div><div class="preview-scroll"><article id="preview"></article></div></section></main><section id="empty-state"><span class="empty-mark">Mk.1</span><h1>Mk.1 Lite</h1><p data-i18n="emptyMenuHint"></p></section>
 <footer class="statusbar"><div><span class="status-dot"></span><span id="save-status"></span><span class="status-separator">/</span><span id="stats"></span></div><div><span id="cursor">Ln 1, Col 1</span><span class="status-separator">|</span><span>UTF-8</span><span class="status-separator">|</span><span id="locale-label"></span></div></footer></div>
@@ -247,6 +259,7 @@ interface TabDocument {
   scrollTop: number;
   outlineCollapsed?: Set<number>;
   outlineSignature?: string;
+  savedText?: string;
 }
 interface OpenedFile {
   path: string | null;
@@ -262,6 +275,7 @@ let nextId = 0,
   titleGeneration = 0;
 let lastNativeTitle: string | null = null;
 let desktopUpdater: ReturnType<typeof createDesktopUpdater> | undefined;
+let autoSave: ReturnType<typeof createAutoSave> | undefined;
 let saving = false,
   filePickerActive = false;
 let renderTimer: ReturnType<typeof setTimeout>,
@@ -617,12 +631,18 @@ function restoreWorkspace() {
 }
 function updateTabs() {
   const active = current();
-  document.querySelector("#tab-list")!.innerHTML = tabs
-    .map(
-      (doc) =>
-        `<div class="document-tab ${doc.id === activeId ? "selected" : ""}"><button class="tab-name" role="tab" aria-selected="${doc.id === activeId}" data-tab="${doc.id}" title="${escape(doc.path || doc.name)}">${icon("file")}<span>${escape(doc.name)}</span>${doc.dirty ? '<i class="tab-dirty"></i>' : ""}</button><button class="tab-close" data-close-tab="${doc.id}" aria-label="${escape(t("close"))}: ${escape(doc.name)}" ${doc.saving ? "disabled" : ""}>${icon("close")}</button></div>`,
-    )
-    .join("");
+  const tabList = document.querySelector<HTMLElement>("#tab-list")!;
+  const previousCount = Number(tabList.dataset.documentCount || "0");
+  tabList.innerHTML =
+    tabs
+      .map(
+        (doc) =>
+          `<div class="document-tab ${doc.id === activeId ? "selected" : ""}"><button class="tab-name" role="tab" aria-selected="${doc.id === activeId}" data-tab="${doc.id}" title="${escape(doc.path || doc.name)}">${icon("file")}<span>${escape(doc.name)}</span>${doc.dirty ? '<i class="tab-dirty"></i>' : ""}</button><button class="tab-close" data-close-tab="${doc.id}" aria-label="${escape(t("close"))}: ${escape(doc.name)}" ${doc.saving ? "disabled" : ""}>${icon("close")}</button></div>`,
+      )
+      .join("") + button("new", "plus", "new", "new-document-tab");
+  tabList.dataset.documentCount = String(tabs.length);
+  // Keep the trailing new-document tab reachable as documents fill the strip.
+  if (tabs.length > previousCount) tabList.scrollLeft = tabList.scrollWidth;
   document
     .querySelectorAll(".filename")
     .forEach((el) => (el.textContent = active?.name || "Mk.1 Lite"));
@@ -717,6 +737,7 @@ function addDocument(file: OpenedFile) {
     : undefined;
   if (existing) {
     existing.sourceKey = sourceKey;
+    if (!existing.dirty && !existing.path) existing.savedText = file.text;
     if (file.file) existing.file = file.file;
     if (!existing.path) {
       existing.path = file.path;
@@ -735,6 +756,7 @@ function addDocument(file: OpenedFile) {
     file: file.file,
     sourceKey,
     state: createState(file.text),
+    savedText: file.text,
     dirty: false,
     revision: 0,
     saving: false,
@@ -912,6 +934,7 @@ function applyPrefs() {
   searchDialog.refresh();
   cheatsheet.refresh();
   shortcutSettings.refresh();
+  autoSave?.refresh();
   persist();
 }
 function toast(message: string) {
@@ -979,9 +1002,18 @@ async function openFile() {
     }
   } else (document.querySelector("#file-input") as HTMLInputElement).click();
 }
-async function saveFile(id = activeId, saveAs = false): Promise<boolean> {
+async function saveFile(
+  id = activeId,
+  saveAs = false,
+  background = false,
+): Promise<boolean> {
   const doc = tabs.find((doc) => doc.id === id);
   if (!doc || saving) return false;
+  if (
+    background &&
+    (!nativeDesktop() || !doc.path || doc.savedText === undefined || !doc.dirty)
+  )
+    return false;
   saving = true;
   doc.saving = true;
   updateTabs();
@@ -1020,12 +1052,24 @@ async function saveFile(id = activeId, saveAs = false): Promise<boolean> {
         toast(t("saveConflict"));
         return false;
       }
-      const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+      const { writeTextFile, readTextFile } =
+        await import("@tauri-apps/plugin-fs");
+      if (background) {
+        const diskText = await readTextFile(path);
+        if (
+          diskText.replace(/^\uFEFF/, "") !==
+          doc.savedText?.replace(/^\uFEFF/, "")
+        ) {
+          toast(t("autoSaveConflict"));
+          return false;
+        }
+        if (desktopUpdater?.updateInProgress) return false;
+      }
       await writeTextFile(path, text);
       doc.path = path;
       doc.name = path.split(/[/\\]/).pop()!;
       doc.sourceKey = path;
-      toast(t("savedFile"));
+      if (!background) toast(t("savedFile"));
     } else {
       const url = URL.createObjectURL(
         new Blob([text], { type: "text/markdown;charset=utf-8" }),
@@ -1044,6 +1088,7 @@ async function saveFile(id = activeId, saveAs = false): Promise<boolean> {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       toast(t("downloaded"));
     }
+    if (nativeDesktop()) doc.savedText = text;
     if (revision === doc.revision) doc.dirty = false;
     saveDraft();
     if (doc.id === activeId)
@@ -1576,6 +1621,45 @@ const restoredActiveId = activeId;
 activeId = null;
 applyPrefs();
 activateDocument(restoredActiveId);
+const autoSaveContainer = document.createElement("section");
+autoSaveContainer.id = "autosave-settings";
+autoSaveContainer.hidden = isAndroidApp();
+document.querySelector(".settings-body")!.append(autoSaveContainer);
+autoSave = createAutoSave({
+  container: autoSaveContainer,
+  getLocale: () => prefs.locale,
+  getSettings: () => ({
+    enabled: prefs.autoSaveEnabled,
+    intervalMinutes: prefs.autoSaveMinutes,
+  }),
+  onSettingsChange: (settings) => {
+    prefs.autoSaveEnabled = settings.enabled;
+    prefs.autoSaveMinutes = settings.intervalMinutes;
+    persist();
+  },
+  canSave: () =>
+    nativeDesktop() &&
+    !saving &&
+    !filePickerActive &&
+    !closePromptActive &&
+    !desktopUpdater?.updateInProgress,
+  save: async () => {
+    saveDraft();
+    let success = true;
+    for (const doc of [...tabs]) {
+      if (
+        saving ||
+        filePickerActive ||
+        closePromptActive ||
+        desktopUpdater?.updateInProgress
+      )
+        return false;
+      if (doc.path && doc.dirty && doc.savedText !== undefined)
+        success = (await saveFile(doc.id, false, true)) && success;
+    }
+    return success;
+  },
+});
 desktopUpdater = createDesktopUpdater({
   enabled: nativeDesktop(),
   getLocale: () => prefs.locale,
