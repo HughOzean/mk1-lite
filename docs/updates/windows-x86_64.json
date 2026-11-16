@@ -1,11 +1,11 @@
 {
-  "version": "0.3.1",
+  "version": "0.4.0",
   "notes": "A new desktop release of Mk.1 Lite is available.",
-  "pub_date": "2026-11-14T05:47:20.676Z",
+  "pub_date": "2026-11-16T02:15:48.355Z",
   "platforms": {
     "windows-x86_64": {
-      "url": "https://github.com/HughOzean/mk1-lite/releases/download/v0.3.1/Mk.1-Lite_0.3.1_windows-x64-setup.exe",
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTeUVBblkxdXlpZ2hpREJUUFJHZk5LLzFmSnQwbUpFemZMVDUwMVMzTWREVEE4eTBNNjc1TDExTi9adWpEeWIvUmJDOHIxSnVQY3RBMDdYZUo1RlJhQjNTblZBQzkwU3djPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjM1MjM5CWZpbGU6TWsuMSBMaXRlXzAuMy4xX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjMuMQpRUm83Qkg2UmhCZWViZzBMTzJWb2FaNUJvcmpVWWNmeUJ6YjRIT28xUVg1UDB3OEFUL2U0ME1sblBKN3YxWmZ3Sy9EUndxQ2JzdTBUYjZWTUdxcStEdz09Cg=="
+      "url": "https://github.com/HughOzean/mk1-lite/releases/download/v0.4.0/Mk.1-Lite_0.4.0_windows-x64-setup.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTeUVBblkxdXlpZ3FuUnZRR1JpYmRodDRzcDBSS1lJUjUxNjBDT05hUE8yNmsvcEdZdlJRZTZDcHRZMTJYRXJqSnNGZisxTmcrY1hXbExCMS84VlBOREk4Q1N1eUNhZFFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0Nzk1MzQ3CWZpbGU6TWsuMSBMaXRlXzAuNC4wX3g2NC1zZXR1cC5leGUJdmVyc2lvbjowLjQuMApJd3FzRTFuUEtWN2ljMVRuamdiYjVyRmtldHhKZUQ1dDRPN0lGK2dTcDhEVXVXUXoyV093VS9VdWVpaDBNWDRCd0llRWw0akI0L2xaQ1VvZ0l2U3ZEZz09Cg=="
     }
   }
 }
