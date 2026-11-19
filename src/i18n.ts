@@ -76,6 +76,7 @@ const keys = [
 ] as const;
 type BaseKey = (typeof keys)[number];
 export type Key =
+  | keyof typeof sessionMessages.en
   | BaseKey
   | keyof typeof desktopMessages.en
   | keyof typeof displayMessages.en
@@ -1057,6 +1058,7 @@ const displayMessages = {
     topSpace: "顶部额外留白",
     safeAreaHint:
       "自动避开刘海、挖孔和系统栏。额外留白会叠加在安全区下方，旋转屏幕后仍然保留。",
+    paragraphIndent: "正文段落首行缩进（2 字符）",
     squareCode: "正方形代码块",
   },
   en: {
@@ -1064,6 +1066,7 @@ const displayMessages = {
     topSpace: "Extra top spacing",
     safeAreaHint:
       "Automatically avoids cutouts and system bars. Extra spacing is added below the safe area and persists after rotation.",
+    paragraphIndent: "Indent body paragraphs (2 characters)",
     squareCode: "Square code blocks",
   },
   pt: {
@@ -1071,6 +1074,7 @@ const displayMessages = {
     topSpace: "Espaço extra superior",
     safeAreaHint:
       "Evita recortes e barras do sistema. O espaço extra é adicionado abaixo da área segura e mantido após a rotação.",
+    paragraphIndent: "Recuar parágrafos (2 caracteres)",
     squareCode: "Blocos de código quadrados",
   },
   fr: {
@@ -1078,6 +1082,7 @@ const displayMessages = {
     topSpace: "Espace supérieur ajouté",
     safeAreaHint:
       "Évite les encoches et les barres système. L’espace ajouté sous la zone sûre est conservé après rotation.",
+    paragraphIndent: "Retrait des paragraphes (2 caractères)",
     squareCode: "Blocs de code carrés",
   },
   de: {
@@ -1085,6 +1090,7 @@ const displayMessages = {
     topSpace: "Zusätzlicher Abstand oben",
     safeAreaHint:
       "Spart Aussparungen und Systemleisten aus. Der zusätzliche Abstand unter dem sicheren Bereich bleibt nach dem Drehen erhalten.",
+    paragraphIndent: "Absatzeinzug (2 Zeichen)",
     squareCode: "Quadratische Codeblöcke",
   },
   ru: {
@@ -1092,6 +1098,7 @@ const displayMessages = {
     topSpace: "Дополнительный отступ сверху",
     safeAreaHint:
       "Учитывает вырезы и системные панели. Дополнительный отступ ниже безопасной области сохраняется после поворота.",
+    paragraphIndent: "Отступ первой строки (2 символа)",
     squareCode: "Квадратные блоки кода",
   },
 } as const;
@@ -1193,7 +1200,41 @@ const desktopMessages = {
     checkUpdates: "Проверить обновления",
   },
 } as const;
+const sessionMessages = {
+  zh: {
+    rememberWorkspace: "记住上次打开的内容",
+    rememberWorkspaceHint:
+      "开启后，下次启动时恢复文件夹、文档和当前标签。关闭会清除恢复记录，不会关闭当前内容。浏览器中的文件夹需要重新授权。",
+  },
+  en: {
+    rememberWorkspace: "Remember last opened workspace",
+    rememberWorkspaceHint:
+      "Restore folders, documents and the active tab on startup. Turning this off clears recovery records and keeps current tabs open. Browser folders need to be selected again.",
+  },
+  pt: {
+    rememberWorkspace: "Lembrar o espaço de trabalho",
+    rememberWorkspaceHint:
+      "Restaura pastas, documentos e a aba ativa ao iniciar. Desativar limpa os registros. Pastas do navegador precisam ser selecionadas novamente.",
+  },
+  fr: {
+    rememberWorkspace: "Mémoriser les derniers fichiers ouverts",
+    rememberWorkspaceHint:
+      "Restaure les dossiers, documents et l’onglet actif au démarrage. Désactiver efface la session enregistrée. Les dossiers du navigateur doivent être sélectionnés à nouveau.",
+  },
+  de: {
+    rememberWorkspace: "Zuletzt geöffnete Inhalte merken",
+    rememberWorkspaceHint:
+      "Ordner, Dokumente und aktiven Tab beim Start wiederherstellen. Ausschalten löscht die gespeicherte Sitzung. Browserordner müssen erneut ausgewählt werden.",
+  },
+  ru: {
+    rememberWorkspace: "Запоминать открытые файлы и папки",
+    rememberWorkspaceHint:
+      "Восстанавливать папки, документы и активную вкладку при запуске. Отключение удаляет сохранённую сессию. Папки в браузере нужно выбрать заново.",
+  },
+} as const;
 export function translate(locale: Locale, key: Key): string {
+  if (key in sessionMessages.en)
+    return sessionMessages[locale][key as keyof typeof sessionMessages.en];
   if (key in desktopMessages.en)
     return desktopMessages[locale][key as keyof typeof desktopMessages.en];
   if (key in displayMessages.en)

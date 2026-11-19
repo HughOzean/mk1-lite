@@ -12,7 +12,7 @@ use tauri_plugin_fs::FsExt;
 
 const MAX_DIRECTORY_ENTRIES: usize = 5000;
 
-// Only a native user selection can add an arbitrary folder to the tree's roots.
+// Native selections and the validated persisted workspace authorize tree roots.
 // No broad filesystem read/write scope is added: opening a Markdown file still
 // validates root containment and grants write permission to that exact file only.
 #[tauri::command]
@@ -438,4 +438,97 @@ mod tests {
         );
         assert!(checked_directory(&roots, &fixture.0, &fixture.0.join("link.md")).is_err());
     }
+}
+
+#[derive(Default, serde::Deserialize, Serialize)]
+pub(crate) struct RememberedWorkspace {
+    folders: Vec<String>,
+    files: Vec<String>,
+}
+
+// Persist only paths already authorized by a user selection in this process.
+#[tauri::command]
+pub(crate) fn remember_workspace(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, MarkdownDirectories>,
+    folders: Vec<String>,
+    files: Vec<String>,
+) -> Result<(), String> {
+    use tauri::Manager;
+    let roots = state.0.lock().map_err(|_| "open-failed")?;
+    let saved = RememberedWorkspace {
+        folders: folders
+            .into_iter()
+            .filter(|path| roots.contains(Path::new(path)))
+            .collect(),
+        files: files
+            .into_iter()
+            .filter(|path| app.fs_scope().is_allowed(Path::new(path)))
+            .collect(),
+    };
+    let directory = app.path().app_data_dir().map_err(|_| "storage-failed")?;
+    fs::create_dir_all(&directory).map_err(|_| "storage-failed")?;
+    let bytes = serde_json::to_vec(&saved).map_err(|_| "storage-failed")?;
+    let pending = directory.join("workspace-paths.tmp");
+    fs::write(&pending, bytes).map_err(|_| "storage-failed")?;
+    let destination = directory.join("workspace-paths.json");
+    // Windows rename cannot replace an existing file.
+    #[cfg(target_os = "windows")]
+    if destination.exists() {
+        fs::remove_file(&destination).map_err(|_| "storage-failed")?;
+    }
+    fs::rename(pending, destination).map_err(|_| "storage-failed".to_owned())
+}
+
+#[derive(Serialize)]
+pub(crate) struct RestoredWorkspace {
+    folders: Vec<String>,
+    files: Vec<OpenedFile>,
+}
+
+#[tauri::command]
+pub(crate) fn restore_workspace(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, MarkdownDirectories>,
+) -> Result<RestoredWorkspace, String> {
+    use tauri::Manager;
+    let path = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "storage-failed")?
+        .join("workspace-paths.json");
+    let saved: RememberedWorkspace = fs::read(path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or_default();
+    let mut restored = RestoredWorkspace {
+        folders: Vec::new(),
+        files: Vec::new(),
+    };
+    let mut roots = state.0.lock().map_err(|_| "open-failed")?;
+    for folder in saved.folders {
+        if let Ok(path) = Path::new(&folder).canonicalize() {
+            if path.is_dir() {
+                roots.insert(path.clone());
+                restored.folders.push(path.to_string_lossy().into_owned());
+            }
+        }
+    }
+    for file in saved.files {
+        if let Ok((path, text)) = read_markdown(Path::new(&file)) {
+            if app.fs_scope().allow_file(&path).is_ok() {
+                restored.files.push(OpenedFile {
+                    name: path
+                        .file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned(),
+                    path: path.to_string_lossy().into_owned(),
+                    text,
+                    error: None,
+                });
+            }
+        }
+    }
+    Ok(restored)
 }

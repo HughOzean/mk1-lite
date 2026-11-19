@@ -78,6 +78,7 @@ export function createFileTree(options: {
   t: (key: string) => string;
   onOpenFile: (file: OpenTreeFile) => void;
   onError?: (message: string) => void;
+  onRootsChange?: () => void;
 }) {
   const { container, t, onOpenFile, onError } = options;
   const roots = new Map<string, RootState>();
@@ -258,6 +259,7 @@ export function createFileTree(options: {
       remove.dataset.focusKey = `${state.id}:remove`;
       remove.addEventListener("click", () => {
         selectedRoots.delete(state.id);
+        options.onRootsChange?.();
         state.version++;
         state.loading.clear();
         state.pending.clear();
@@ -598,6 +600,7 @@ export function createFileTree(options: {
         state = existing || browserRoot(directory);
       }
       selectedRoots.set(state.id, state);
+      options.onRootsChange?.();
       collapsedRoots.delete(state.id);
       root = state;
       activeKey = doc?.path || "";
@@ -830,6 +833,30 @@ export function createFileTree(options: {
         paths: [],
       }).catch(() => {});
   }
+  function getFolders(): string[] {
+    return [...selectedRoots.values()].flatMap((state) =>
+      state.nativePath ? [state.nativePath] : [],
+    );
+  }
+  async function restoreFolders(paths: string[]) {
+    for (const path of paths) {
+      const id = `native:${path}`;
+      const state =
+        roots.get(id) ||
+        makeRoot(id, basename(path), path, { nativePath: path });
+      roots.set(id, state);
+      selectedRoots.set(id, state);
+      await loadChildren(state, state.rootKey);
+    }
+    setDocument(doc);
+  }
   render();
-  return { setDocument, refresh, refreshLabels: render, dispose };
+  return {
+    setDocument,
+    refresh,
+    refreshLabels: render,
+    dispose,
+    getFolders,
+    restoreFolders,
+  };
 }

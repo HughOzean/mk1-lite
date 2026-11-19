@@ -56,6 +56,9 @@ async function harness(configuration = {}) {
             ].includes(command)
           )
             return null;
+          if (command === "restore_workspace")
+            return { folders: [], files: [] };
+          if (command === "remember_workspace") return null;
           if (command === "plugin:app|version") return "0.3.1";
           if (command === "take_opened_files") {
             const files = window.testQueue;

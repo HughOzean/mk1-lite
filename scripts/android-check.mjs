@@ -16,6 +16,24 @@ try {
   await page.goto(`${url}/?android-preview=1`);
   await expect(page.locator("#preview h1")).toHaveText("把灵感，留在此刻");
   await expect(page.locator(".mobile-actions")).toBeVisible();
+  assert.equal(
+    await page.locator("html").getAttribute("data-desktop-ui"),
+    null,
+  );
+  await expect(
+    page.locator('[data-format="table"] + [data-format="orderedList"]'),
+  ).toHaveCount(1);
+  await expect(page.locator("#preview")).not.toHaveAttribute(
+    "data-paragraph-indent",
+    "",
+  );
+  await page.locator('[data-action="settings"]').click();
+  await expect(page.locator("#paragraphIndent")).toBeHidden();
+  await expect(page.locator("#rememberWorkspace")).toBeHidden();
+  await page
+    .locator('#settings [data-action="close-settings"]')
+    .first()
+    .click();
   await expect(page.locator("#app-menu")).toBeHidden();
   await expect(page.locator(".editor-pane")).toBeHidden();
   assert.equal(

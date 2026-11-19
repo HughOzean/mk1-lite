@@ -344,6 +344,8 @@ pub fn run() {
             take_opened_files,
             set_default_markdown_app,
             folder_tree::choose_markdown_directory,
+            folder_tree::remember_workspace,
+            folder_tree::restore_workspace,
             folder_tree::watch_markdown_directories,
             folder_tree::authorize_directory_for_file,
             folder_tree::list_markdown_directory,

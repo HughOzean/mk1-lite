@@ -98,6 +98,7 @@ interface Prefs {
   theme: "dark" | "light" | "system";
   size: number;
   editorSize: number;
+  rememberWorkspace: boolean;
   autoSaveEnabled: boolean;
   autoSaveMinutes: number;
   lineHeight: number;
@@ -108,6 +109,7 @@ interface Prefs {
   breaks: boolean;
   topSpace: number;
   squareCode: boolean;
+  paragraphIndent: boolean;
   mode: "split" | "editor" | "preview";
   side: "files" | "outline";
 }
@@ -116,6 +118,7 @@ const defaults: Prefs = {
   theme: "dark",
   size: 15,
   editorSize: 13,
+  rememberWorkspace: true,
   autoSaveEnabled: true,
   autoSaveMinutes: 15,
   lineHeight: 1.85,
@@ -126,6 +129,7 @@ const defaults: Prefs = {
   breaks: false,
   topSpace: 0,
   squareCode: true,
+  paragraphIndent: false,
   mode: "split",
   side: "files",
 };
@@ -165,7 +169,13 @@ prefs.width = Math.max(480, Math.min(1000, prefs.width));
 prefs.topSpace = Number.isFinite(prefs.topSpace)
   ? Math.max(0, Math.min(96, prefs.topSpace))
   : 0;
+const desktopExperience =
+  !isAndroidApp() &&
+  !new URLSearchParams(location.search).has("android-preview");
 document.documentElement.toggleAttribute("data-android-app", isAndroidApp());
+document.documentElement.toggleAttribute("data-desktop-ui", desktopExperience);
+// Android keeps its existing automatic draft recovery, without desktop switches.
+if (!desktopExperience) prefs.rememberWorkspace = true;
 
 if (!["files", "outline"].includes(prefs.side)) prefs.side = "files";
 const t = (key: Key) => translate(prefs.locale, key);
@@ -175,10 +185,10 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk.1 Lite"><img class="brand-icon" src="./favicon.svg" alt="Mk.1"><span>Mk.1 <span class="brand-light">Lite</span><small>Mark One Lite</small></span></a><div class="sidebar-tabs" role="tablist"><button data-side="files" role="tab">${icon("folder")}<span data-i18n="files"></span></button><button data-side="outline" role="tab">${icon("list")}<span data-i18n="outline"></span></button></div><div id="file-tree"></div><section id="outline-panel"><div class="outline-head"><span data-i18n="outline"></span><div>${button("outlineCollapse", "fold", "outline-collapse")}${button("outlineExpand", "unfold", "outline-expand")}</div></div><nav class="outline" aria-label="Outline"></nav></section><div class="sidebar-footer">${isAndroidApp() ? "v0.2.8 · Android" : `v${appInfo.version}`}</div></aside><button class="sidebar-backdrop" data-action="sidebar" aria-label="Close sidebar"></button>
 <div class="workspace"><header class="topbar"><div class="breadcrumb">${button("files", "menu", "sidebar", "mobile-menu")}</div><div class="component-bar" role="toolbar" aria-label="Components"><button class="component-icon cheatsheet-button" data-action="cheatsheet" aria-label="${t("cheatsheet")}" title="${t("cheatsheet")}">${icon("help")}</button><button class="component-icon settings-button" data-action="settings" aria-label="${t("settings")}" title="${t("settings")}">${icon("settings")}</button><div class="mode-toggle" role="group"><button data-mode="editor" aria-pressed="false"></button><button data-mode="preview" aria-pressed="false"></button></div></div></header>
 <div class="document-tabs"><div id="tab-list" role="tablist"></div><div class="view-switch" role="group" hidden>${(["editor", "split", "preview"] as const).map((v, i) => `<button data-mode="${v}" title="${t(v)}">${icon(["edit", "split", "eye"][i])}<span data-i18n="${v}"></span></button>`).join("")}</div></div>
-<div class="format-toolbar"><div class="format-tools"><select id="heading-level" aria-label="${t("heading")}">${[1, 2, 3, 4, 5].map((level) => `<option value="${level}">H${level}</option>`).join("")}</select><span class="divider"></span><button data-format="bold" title="${t("bold")}"><b>B</b></button><button data-format="italic" title="${t("italic")}"><i>I</i></button><button data-format="link" title="${t("link")}">${icon("link")}</button><span class="divider"></span><button data-format="quote" title="${t("quote")}">${icon("quote")}</button><button data-format="code" title="${t("code")}">${icon("code")}</button><button data-format="list" title="${t("list")}">${icon("list")}</button><span class="divider"></span><button data-format="table" title="${t("table")}">${icon("table")}</button><button data-format="orderedList" title="${t("orderedList")}">${icon("orderedList")}</button><button data-format="strike" title="${t("strike")}">${icon("strike")}</button><button data-format="inlineCode" title="${t("inlineCode")}">${icon("inlineCode")}</button><button data-format="rule" title="${t("rule")}">${icon("rule")}</button></div><div class="editor-zoom" role="group" aria-label="${t("editorFontSize")}">${button("zoomOut", "zoomOut", "zoom-out")}<output id="editor-size-label">${prefs.editorSize}px</output>${button("zoomIn", "zoomIn", "zoom-in")}</div></div>
+<div class="format-toolbar"><div class="format-tools"><select id="heading-level" aria-label="${t("heading")}">${[1, 2, 3, 4, 5].map((level) => `<option value="${level}">H${level}</option>`).join("")}</select><span class="divider"></span><button data-format="bold" title="${t("bold")}"><b>B</b></button><button data-format="italic" title="${t("italic")}"><i>I</i></button><button data-format="link" title="${t("link")}">${icon("link")}</button><span class="divider"></span><button data-format="quote" title="${t("quote")}">${icon("quote")}</button><button data-format="code" title="${t("code")}">${icon("code")}</button><button data-format="list" title="${t("list")}">${icon("list")}</button><button data-format="orderedList" title="${t("orderedList")}">${icon("orderedList")}</button><span class="divider"></span><button data-format="table" title="${t("table")}">${icon("table")}</button><button data-format="strike" title="${t("strike")}">${icon("strike")}</button><button data-format="inlineCode" title="${t("inlineCode")}">${icon("inlineCode")}</button><button data-format="rule" title="${t("rule")}">${icon("rule")}</button></div><div class="editor-zoom" role="group" aria-label="${t("editorFontSize")}">${button("zoomOut", "zoomOut", "zoom-out")}<output id="editor-size-label">${prefs.editorSize}px</output>${button("zoomIn", "zoomIn", "zoom-in")}</div></div>
 <main class="panes"><section class="editor-pane"><div class="pane-label"><span data-i18n="editor"></span></div><div id="editor"></div></section><section class="preview-pane"><div class="pane-label"><span data-i18n="preview"></span></div><div class="preview-scroll"><article id="preview"></article></div></section></main><section id="empty-state"><span class="empty-mark">Mk.1</span><h1>Mk.1 Lite</h1><p data-i18n="emptyMenuHint"></p></section>
 <footer class="statusbar"><div><span class="status-dot"></span><span id="save-status"></span><span class="status-separator">/</span><span id="stats"></span></div><div><span id="cursor">Ln 1, Col 1</span><span class="status-separator">|</span><span>UTF-8</span><span class="status-separator">|</span><span id="locale-label"></span></div></footer></div>
-<dialog id="settings"><div class="settings-top"><div><h2 data-i18n="settings"></h2></div>${button("close", "close", "close-settings")}</div><div class="settings-body"><p class="settings-intro" data-i18n="renderHint"></p><section class="mobile-display-settings"><h3 data-i18n="mobileDisplay"></h3><p class="settings-intro" data-i18n="safeAreaHint"></p><label class="range-row"><span><span data-i18n="topSpace"></span><output id="topSpace-value"></output></span><input id="topSpace" type="range" min="0" max="96" step="4" data-unit="px"></label></section><h3 data-i18n="appearance"></h3><label class="setting-row"><span data-i18n="language"></span><select id="language">${Object.entries(
+<dialog id="settings"><div class="settings-top"><div><h2 data-i18n="settings"></h2></div>${button("close", "close", "close-settings")}</div><div class="settings-body"><p class="settings-intro" data-i18n="renderHint"></p><section class="mobile-display-settings"><h3 data-i18n="mobileDisplay"></h3><p class="settings-intro" data-i18n="safeAreaHint"></p><label class="range-row"><span><span data-i18n="topSpace"></span><output id="topSpace-value"></output></span><input id="topSpace" type="range" min="0" max="96" step="4" data-unit="px"></label></section><section class="desktop-workspace-settings"><h3 data-i18n="workspace"></h3><label class="setting-row"><span data-i18n="rememberWorkspace"></span><span class="switch-control"><input id="rememberWorkspace" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><p class="settings-intro" data-i18n="rememberWorkspaceHint"></p></section><h3 data-i18n="appearance"></h3><label class="setting-row"><span data-i18n="language"></span><select id="language">${Object.entries(
   languages,
 )
   .map(([v, label]) => `<option value="${v}">${label}</option>`)
@@ -195,7 +205,12 @@ app.innerHTML = `<aside class="sidebar"><a class="brand" href="#" aria-label="Mk
   )
   .join(
     "",
-  )}<label class="setting-row"><span data-i18n="squareCode"></span><span class="switch-control"><input id="squareCode" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><h3 data-i18n="editor"></h3><label class="setting-row"><span data-i18n="lineNumbers"></span><span class="switch-control"><input id="numbers" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="wrap"></span><span class="switch-control"><input id="wrap" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="softBreaks"></span><span class="switch-control"><input id="breaks" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><section id="file-associations" hidden><h3 data-i18n="fileAssociations"></h3><p class="settings-intro" data-i18n="defaultAppHint"></p><button class="association-button" data-action="set-default-app" data-i18n="setDefaultApp"></button><p id="association-status" role="status" aria-live="polite"></p></section><section id="shortcut-settings"></section><div class="shortcut-card"><span data-i18n="shortcuts"></span><div><span data-i18n="save"></span><kbd>⌘ / Ctrl S</kbd></div><div><span data-i18n="find"></span><kbd>⌘ / Ctrl F</kbd></div><div><span data-i18n="bold"></span><kbd>⌘ / Ctrl B</kbd></div></div></div><div class="settings-bottom"><button data-action="reset" data-i18n="reset"></button><button class="primary" data-action="close-settings" data-i18n="close"></button></div></dialog><input type="file" id="file-input" accept=".md,.markdown,.mdown,.txt,text/plain,text/markdown" multiple hidden><div id="toast" role="status"></div>`;
+  )}<label class="setting-row desktop-setting"><span data-i18n="paragraphIndent"></span><span class="switch-control"><input id="paragraphIndent" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="squareCode"></span><span class="switch-control"><input id="squareCode" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><h3 data-i18n="editor"></h3><label class="setting-row"><span data-i18n="lineNumbers"></span><span class="switch-control"><input id="numbers" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="wrap"></span><span class="switch-control"><input id="wrap" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><label class="setting-row"><span data-i18n="softBreaks"></span><span class="switch-control"><input id="breaks" type="checkbox" role="switch"><span class="switch-track" aria-hidden="true"></span></span></label><section id="file-associations" hidden><h3 data-i18n="fileAssociations"></h3><p class="settings-intro" data-i18n="defaultAppHint"></p><button class="association-button" data-action="set-default-app" data-i18n="setDefaultApp"></button><p id="association-status" role="status" aria-live="polite"></p></section><section id="shortcut-settings"></section><div class="shortcut-card"><span data-i18n="shortcuts"></span><div><span data-i18n="save"></span><kbd>⌘ / Ctrl S</kbd></div><div><span data-i18n="find"></span><kbd>⌘ / Ctrl F</kbd></div><div><span data-i18n="bold"></span><kbd>⌘ / Ctrl B</kbd></div></div></div><div class="settings-bottom"><button data-action="reset" data-i18n="reset"></button><button class="primary" data-action="close-settings" data-i18n="close"></button></div></dialog><input type="file" id="file-input" accept=".md,.markdown,.mdown,.txt,text/plain,text/markdown" multiple hidden><div id="toast" role="status"></div>`;
+if (!desktopExperience) {
+  document
+    .querySelector('[data-format="table"]')!
+    .after(document.querySelector('[data-format="orderedList"]')!);
+}
 const mobileNav = document.createElement("nav");
 mobileNav.className = "mobile-actions";
 mobileNav.setAttribute("aria-label", "Document actions");
@@ -484,6 +499,7 @@ const fileTree = createFileTree({
     addDocument(file);
   },
   onError: () => toast(t("fileError")),
+  onRootsChange: () => saveDraft(),
 });
 const cheatsheet = createCheatsheet({
   t: (key) => t(key as Key),
@@ -558,8 +574,37 @@ function persist() {
     toast(t("storageError"));
   }
 }
+let restoringWorkspace = false;
+let nativeWorkspaceQueue = Promise.resolve();
+let nativeWorkspaceSignature = "";
+function rememberNativeWorkspace() {
+  if (!nativeDesktop() || restoringWorkspace) return;
+  const folders = prefs.rememberWorkspace ? fileTree.getFolders() : [];
+  const files = prefs.rememberWorkspace
+    ? tabs.flatMap((doc) => (doc.path ? [doc.path] : []))
+    : [];
+  const signature = JSON.stringify({ folders, files });
+  if (signature === nativeWorkspaceSignature) return;
+  nativeWorkspaceSignature = signature;
+  nativeWorkspaceQueue = nativeWorkspaceQueue
+    .then(async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("remember_workspace", { folders, files });
+    })
+    .catch(() => {
+      nativeWorkspaceSignature = "";
+      toast(t("storageError"));
+    });
+}
 function saveDraft() {
+  if (restoringWorkspace) return;
+  rememberNativeWorkspace();
   try {
+    if (!prefs.rememberWorkspace) {
+      workspaceStorage().removeItem("m1-workspace-v2");
+      workspaceStorage().removeItem("m1-draft");
+      return;
+    }
     workspaceStorage().setItem(
       "m1-workspace-v2",
       JSON.stringify({
@@ -567,6 +612,7 @@ function saveDraft() {
           name: doc.name,
           text: doc.state.doc.toString(),
           dirty: doc.dirty,
+          savedText: doc.savedText,
           sourceKey:
             doc.path ||
             (doc.sourceKey?.startsWith("browser-tree:")
@@ -583,6 +629,7 @@ function saveDraft() {
   }
 }
 function restoreWorkspace() {
+  if (!prefs.rememberWorkspace) return;
   try {
     const saved = JSON.parse(read("m1-workspace-v2") || "null");
     if (saved && Array.isArray(saved.documents)) {
@@ -595,6 +642,8 @@ function restoreWorkspace() {
           path: null,
           sourceKey:
             typeof item.sourceKey === "string" ? item.sourceKey : undefined,
+          savedText:
+            typeof item.savedText === "string" ? item.savedText : undefined,
           state: createState(item.text),
           dirty: !!item.dirty,
           revision: 0,
@@ -820,7 +869,7 @@ function renderOutline() {
           const branch = !!hs[i + 1] && hs[i + 1].level > h.level;
           const folded = branch && collapsed.has(i);
           if (folded) hiddenBelow = h.level;
-          return `<div class="outline-row" style="--depth:${h.level - 1}">${branch ? `<button class="outline-toggle" data-outline-toggle="${i}" aria-expanded="${!folded}" aria-label="${escape(t(folded ? "expand" : "collapse"))}: ${escape(h.text)}">${icon("chevron")}</button>` : '<span class="outline-leaf"></span>'}<button class="outline-heading" data-heading="${i}" title="${escape(h.text)}"><span class="outline-hash">${h.level === 1 ? "#" : "·"}</span><span>${escape(h.text)}</span></button></div>`;
+          return `<div class="outline-row" style="--depth:${h.level - 1}">${branch ? `<button class="outline-toggle" data-outline-toggle="${i}" aria-expanded="${!folded}" aria-label="${escape(t(folded ? "expand" : "collapse"))}: ${escape(h.text)}">${icon("chevron")}</button>` : '<span class="outline-leaf"></span>'}<button class="outline-heading" data-heading="${i}" title="${escape(h.text)}">${h.level === 1 && desktopExperience ? "" : `<span class="outline-hash">${h.level === 1 ? "#" : "·"}</span>`}<span>${escape(h.text)}</span></button></div>`;
         })
         .join("")
     : `<p class="empty-outline">${t("emptyOutline")}</p>`;
@@ -853,6 +902,12 @@ function applyPrefs() {
   ])
     document.documentElement.style.setProperty(name, value);
   document.querySelector("#preview")!.className = `type-${prefs.style}`;
+  document
+    .querySelector("#preview")!
+    .toggleAttribute(
+      "data-paragraph-indent",
+      desktopExperience && prefs.paragraphIndent,
+    );
   app.dataset.mode = prefs.mode;
   document
     .querySelector("#preview")!
@@ -905,6 +960,8 @@ function applyPrefs() {
     "breaks",
     "topSpace",
     "squareCode",
+    "paragraphIndent",
+    "rememberWorkspace",
   ]) {
     const el = document.getElementById(key) as HTMLInputElement;
     const value = (prefs as any)[key === "language" ? "locale" : key];
@@ -1346,6 +1403,7 @@ app.addEventListener("click", async (event) => {
     case "reset":
       prefs = { ...defaults, locale: prefs.locale, side: prefs.side };
       applyPrefs();
+      saveDraft();
       break;
     case "find":
       if (current()) searchDialog.open(true);
@@ -1405,6 +1463,7 @@ const updateSetting = (event: Event) => {
         ? Number(el.value)
         : el.value;
   applyPrefs();
+  if (key === "rememberWorkspace") saveDraft();
 };
 document.querySelector("#settings")!.addEventListener("input", updateSetting);
 document.querySelector("#settings")!.addEventListener("change", updateSetting);
@@ -1604,114 +1663,150 @@ async function initializeNativeFiles() {
     toast(t("fileError"));
   }
 }
-// Preview uses isolated session storage, so sample edits never replace real drafts.
-restoreWorkspace();
-if (
-  new URLSearchParams(location.search).has("android-preview") &&
-  !tabs.length
-) {
-  addDocument({
-    path: null,
-    name: "随手记.md",
-    text: "# 把灵感，留在此刻\n\n一个安静的空间，记录想法，也整理思绪。\n\n## 今天的计划\n\n- 记录一个新想法\n- 整理阅读笔记\n- 留一点时间给自己\n\n> 专注于文字，让思绪自然流动。\n\n## 从简单开始\n\n用 **Markdown** 写下日常，在编辑与预览之间轻松切换。\n\n```markdown\n# 一个标题\n让记录成为习惯。\n```\n",
-  });
-  prefs.mode = "preview";
-}
-const restoredActiveId = activeId;
-activeId = null;
-applyPrefs();
-activateDocument(restoredActiveId);
-const autoSaveContainer = document.createElement("section");
-autoSaveContainer.id = "autosave-settings";
-autoSaveContainer.hidden = isAndroidApp();
-document.querySelector(".settings-body")!.append(autoSaveContainer);
-autoSave = createAutoSave({
-  container: autoSaveContainer,
-  getLocale: () => prefs.locale,
-  getSettings: () => ({
-    enabled: prefs.autoSaveEnabled,
-    intervalMinutes: prefs.autoSaveMinutes,
-  }),
-  onSettingsChange: (settings) => {
-    prefs.autoSaveEnabled = settings.enabled;
-    prefs.autoSaveMinutes = settings.intervalMinutes;
-    persist();
-  },
-  canSave: () =>
-    nativeDesktop() &&
-    !saving &&
-    !filePickerActive &&
-    !closePromptActive &&
-    !desktopUpdater?.updateInProgress,
-  save: async () => {
-    saveDraft();
-    let success = true;
-    for (const doc of [...tabs]) {
-      if (
-        saving ||
-        filePickerActive ||
-        closePromptActive ||
-        desktopUpdater?.updateInProgress
-      )
-        return false;
-      if (doc.path && doc.dirty && doc.savedText !== undefined)
-        success = (await saveFile(doc.id, false, true)) && success;
+async function initializeWorkspace() {
+  // Verify native paths before any startup event can overwrite the saved workspace.
+  restoringWorkspace = true;
+  restoreWorkspace();
+  let restoredActiveId = activeId;
+  activeId = null;
+  if (nativeDesktop() && prefs.rememberWorkspace) {
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const restored = await invoke<{ folders: string[]; files: OpenedFile[] }>(
+        "restore_workspace",
+      );
+      for (const file of restored.files) {
+        const doc = tabs.find((doc) => doc.sourceKey === file.path);
+        if (!doc) continue;
+        doc.path = file.path;
+        if (!doc.dirty) doc.savedText = file.text;
+        // Disk is authoritative for clean tabs; dirty tabs retain their recovery text.
+        if (!doc.dirty) doc.state = createState(file.text);
+      }
+      await fileTree.restoreFolders(restored.folders);
+    } catch {
+      toast(t("fileError"));
     }
-    return success;
-  },
-});
-desktopUpdater = createDesktopUpdater({
-  enabled: nativeDesktop(),
-  getLocale: () => prefs.locale,
-  beforeInstall: async () => {
-    if (saving || filePickerActive || closePromptActive) return false;
-    saveDraft();
-    for (const doc of [...tabs]) {
-      if (doc.saving) return false;
-      if (doc.dirty && !(await saveFile(doc.id))) return false;
-    }
-    saveDraft();
-    return tabs.every((doc) => !doc.dirty && !doc.saving);
-  },
-});
-const updateButton = document.createElement("button");
-updateButton.type = "button";
-updateButton.className = "check-updates-button";
-updateButton.dataset.i18n = "checkUpdates";
-updateButton.textContent = t("checkUpdates");
-updateButton.hidden = !nativeDesktop();
-updateButton.addEventListener("click", () => void desktopUpdater?.check(true));
-document.querySelector(".settings-body")!.append(updateButton);
-if (nativeDesktop()) {
-  void import("@tauri-apps/api/window").then(({ getCurrentWindow }) =>
-    getCurrentWindow().onCloseRequested((event) => {
-      if (desktopUpdater?.updateInProgress) event.preventDefault();
+  }
+  restoringWorkspace = false;
+  if (
+    new URLSearchParams(location.search).has("android-preview") &&
+    !tabs.length
+  ) {
+    addDocument({
+      path: null,
+      name: "随手记.md",
+      text: "# 把灵感，留在此刻\n\n一个安静的空间，记录想法，也整理思绪。\n\n## 今天的计划\n\n- 记录一个新想法\n- 整理阅读笔记\n- 留一点时间给自己\n\n> 专注于文字，让思绪自然流动。\n\n## 从简单开始\n\n用 **Markdown** 写下日常，在编辑与预览之间轻松切换。\n\n```markdown\n# 一个标题\n让记录成为习惯。\n```\n",
+    });
+    prefs.mode = "preview";
+    restoredActiveId = activeId;
+    activeId = null;
+  }
+  applyPrefs();
+  activateDocument(restoredActiveId);
+  const autoSaveContainer = document.createElement("section");
+  autoSaveContainer.id = "autosave-settings";
+  autoSaveContainer.hidden = isAndroidApp();
+  document.querySelector(".settings-body")!.append(autoSaveContainer);
+  autoSave = createAutoSave({
+    container: autoSaveContainer,
+    getLocale: () => prefs.locale,
+    getSettings: () => ({
+      enabled: prefs.autoSaveEnabled,
+      intervalMinutes: prefs.autoSaveMinutes,
     }),
-  );
-}
-if (isAndroidApp()) {
-  watchAndroidOpenedFiles(
-    (file) => {
-      if (file.error) {
-        toast(t("fileError"));
-        return;
-      }
-      const existing = tabs.find((doc) => doc.sourceKey === file.uri);
-      if (existing) activateDocument(existing.id);
-      else {
-        addDocument({ path: null, name: file.name, text: file.text });
-        current()!.sourceKey = file.uri;
-        saveDraft();
-      }
+    onSettingsChange: (settings) => {
+      prefs.autoSaveEnabled = settings.enabled;
+      prefs.autoSaveMinutes = settings.intervalMinutes;
+      persist();
     },
-    () => toast(t("fileError")),
+    canSave: () =>
+      nativeDesktop() &&
+      !saving &&
+      !filePickerActive &&
+      !closePromptActive &&
+      !desktopUpdater?.updateInProgress,
+    save: async () => {
+      saveDraft();
+      let success = true;
+      for (const doc of [...tabs]) {
+        if (
+          saving ||
+          filePickerActive ||
+          closePromptActive ||
+          desktopUpdater?.updateInProgress
+        )
+          return false;
+        if (doc.path && doc.dirty && doc.savedText !== undefined)
+          success = (await saveFile(doc.id, false, true)) && success;
+      }
+      return success;
+    },
+  });
+  desktopUpdater = createDesktopUpdater({
+    enabled: nativeDesktop(),
+    getLocale: () => prefs.locale,
+    beforeInstall: async () => {
+      if (saving || filePickerActive || closePromptActive) return false;
+      saveDraft();
+      for (const doc of [...tabs]) {
+        if (doc.saving) return false;
+        if (doc.dirty && !(await saveFile(doc.id))) return false;
+      }
+      saveDraft();
+      await nativeWorkspaceQueue;
+      return tabs.every((doc) => !doc.dirty && !doc.saving);
+    },
+  });
+  const updateButton = document.createElement("button");
+  updateButton.type = "button";
+  updateButton.className = "check-updates-button";
+  updateButton.dataset.i18n = "checkUpdates";
+  updateButton.textContent = t("checkUpdates");
+  updateButton.hidden = !nativeDesktop();
+  updateButton.addEventListener(
+    "click",
+    () => void desktopUpdater?.check(true),
   );
+  document.querySelector(".settings-body")!.append(updateButton);
+  if (nativeDesktop()) {
+    void import("@tauri-apps/api/window").then(({ getCurrentWindow }) =>
+      getCurrentWindow().onCloseRequested(async (event) => {
+        if (desktopUpdater?.updateInProgress) {
+          event.preventDefault();
+          return;
+        }
+        saveDraft();
+        // Tauri waits for this handler before destroying the window.
+        await nativeWorkspaceQueue;
+      }),
+    );
+  }
+  if (isAndroidApp()) {
+    watchAndroidOpenedFiles(
+      (file) => {
+        if (file.error) {
+          toast(t("fileError"));
+          return;
+        }
+        const existing = tabs.find((doc) => doc.sourceKey === file.uri);
+        if (existing) activateDocument(existing.id);
+        else {
+          addDocument({ path: null, name: file.name, text: file.text });
+          current()!.sourceKey = file.uri;
+          saveDraft();
+        }
+      },
+      () => toast(t("fileError")),
+    );
+  }
+  if (isNative()) {
+    if (/Mac/.test(navigator.platform))
+      document.querySelector<HTMLElement>("#file-associations")!.hidden = false;
+    void initializeNativeFiles();
+  }
 }
-if (isNative()) {
-  if (/Mac/.test(navigator.platform))
-    document.querySelector<HTMLElement>("#file-associations")!.hidden = false;
-  void initializeNativeFiles();
-}
+void initializeWorkspace();
 async function performAction(action: string) {
   if (document.querySelector("#desktop-updater[open]")) return;
   if (action === "toggle-mode") {

@@ -1,4 +1,4 @@
-/* Documents and the trailing add button share one horizontally scrolling strip. */
+/* Documents and the compact add button share one horizontally scrolling strip. */
 #tab-list {
   --workspace-tab-width: 160px;
   align-items: stretch;
@@ -72,4 +72,15 @@ button[data-action="save-as"]:focus-visible,
 #close-document button[data-close-choice="save"]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+html[data-desktop-ui] #tab-list > .new-document-tab {
+  width: calc(var(--workspace-tab-width) / 4);
+  min-width: calc(var(--workspace-tab-width) / 4);
+  max-width: calc(var(--workspace-tab-width) / 4);
+  flex-basis: calc(var(--workspace-tab-width) / 4);
+}
+html:not([data-desktop-ui]) .desktop-workspace-settings,
+html:not([data-desktop-ui]) .desktop-setting {
+  display: none;
 }

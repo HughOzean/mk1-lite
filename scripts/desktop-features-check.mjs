@@ -43,8 +43,8 @@ try {
     });
     assert.ok(dimensions);
     assert.ok(
-      Math.abs(dimensions.width - dimensions.addWidth) < 1,
-      "new tab width matches document tab",
+      Math.abs(dimensions.width / 4 - dimensions.addWidth) < 1,
+      "new tab width is one quarter of document tab",
     );
     assert.ok(
       Math.abs(dimensions.height - dimensions.addHeight) < 1,
@@ -72,6 +72,9 @@ try {
       .allTextContents()
       .then((lines) => lines.join("\n"));
 
+  await expect(
+    page.locator('[data-format="list"] + [data-format="orderedList"]'),
+  ).toHaveCount(1);
   await replaceDocument("first item\nsecond item");
   await selectDocument();
   await page.locator('[data-format="orderedList"]').click();
@@ -129,6 +132,8 @@ try {
   await replaceDocument(outlineSource);
   await page.locator('[data-side="outline"]').click();
   await expect(page.locator('[data-heading="0"]')).toBeVisible();
+  await expect(page.locator('[data-heading="0"]')).toHaveText("Parent");
+  await expect(page.locator('[data-heading="0"] .outline-hash')).toHaveCount(0);
   await expect(page.locator('[data-heading="1"]')).toBeVisible();
   await expect(page.locator('[data-heading="2"]')).toBeVisible();
   await page.locator('[data-outline-toggle="0"]').click();
@@ -174,6 +179,57 @@ try {
   for (let step = 10; step < beforeSize; step++)
     await page.locator('[data-action="zoom-in"]').click();
 
+  // Indentation is a persistent rendering preference; Markdown stays unchanged.
+  await replaceDocument(
+    "# Title\n\nBody paragraph\n\nSecond paragraph\n\n> Quoted paragraph\n\n- List item\n\n```\ncode\n```",
+  );
+  const indentSource = await documentText();
+  await expect(page.locator("#preview > p")).toHaveCount(2);
+  await expect(page.locator("#preview > p").first()).toHaveCSS(
+    "text-indent",
+    "0px",
+  );
+  await page.locator('[data-action="settings"]').click();
+  await page.locator("#paragraphIndent").check();
+  await page
+    .locator('#settings [data-action="close-settings"]')
+    .first()
+    .click();
+  const indent = await page
+    .locator("#preview")
+    .evaluate((el) => `${parseFloat(getComputedStyle(el).fontSize) * 2}px`);
+  await expect(page.locator("#preview > p").first()).toHaveCSS(
+    "text-indent",
+    indent,
+  );
+  await expect(page.locator("#preview > p").nth(1)).toHaveCSS(
+    "text-indent",
+    indent,
+  );
+  await expect(page.locator("#preview blockquote p")).toHaveCSS(
+    "text-indent",
+    "0px",
+  );
+  await expect(page.locator("#preview li")).toHaveCSS("text-indent", "0px");
+  await expect(page.locator("#preview h1")).toHaveCSS("text-indent", "0px");
+  assert.equal(await documentText(), indentSource);
+  await page.reload();
+  await expect(page.locator("#preview > p").first()).toHaveCSS(
+    "text-indent",
+    indent,
+  );
+  assert.equal(await documentText(), indentSource);
+  await page.locator('[data-action="settings"]').click();
+  await expect(page.locator("#paragraphIndent")).toBeChecked();
+  await page.locator("#paragraphIndent").uncheck();
+  await page
+    .locator('#settings [data-action="close-settings"]')
+    .first()
+    .click();
+  await expect(page.locator("#preview > p").first()).toHaveCSS(
+    "text-indent",
+    "0px",
+  );
   await page.screenshot({ path: "artifacts/desktop-features.png" });
   await page.setViewportSize({ width: 1024, height: 768 });
   assert.ok(
@@ -220,7 +276,7 @@ try {
   await page.keyboard.press("Escape");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: new-document tab, multiline ordered list, strikethrough, inline code, horizontal rule, editor-only font zoom, outline branch/all folding without document changes, desktop layout, same-size trailing add tab/overflow, Mk.1 green save actions, no runtime errors.",
+    "PASS: new-document tab, multiline ordered list, strikethrough, inline code, horizontal rule, editor-only font zoom, outline branch/all folding without document changes, desktop layout, quarter-width trailing add tab/overflow, Mk.1 green save actions, no runtime errors.",
   );
 } finally {
   await browser.close();

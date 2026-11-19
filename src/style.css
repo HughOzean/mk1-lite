@@ -616,6 +616,9 @@ kbd {
 #preview p {
   margin: 14px 0;
 }
+#preview[data-paragraph-indent] > p {
+  text-indent: 2em;
+}
 #preview strong {
   font-weight: 600;
   color: var(--text);
